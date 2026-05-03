@@ -39,7 +39,7 @@ import {
   fetchSalesHeatmap, fetchSalesBySource, fetchSalesByCampaign, fetchItemPerformance,
   fetchCampaignDetail, fetchSourceDetail, fetchSalesByMedium, fetchSalesByContent, fetchSalesByTerm,
 } from "@/services/salesAnalyticsService";
-import { getFunnelData, type FunnelData } from "@/services/productEventService";
+import { getFunnelData, getMenuVisitsBreakdown, type FunnelData } from "@/services/productEventService";
 import { formatCurrency } from "@/lib/utils";
 
 const dailyChartConfig: ChartConfig = {
@@ -151,6 +151,13 @@ const AdminGA4 = () => {
   });
 
   const [funnelProduct, setFunnelProduct] = useState<string>("all");
+  const [visitsModalOpen, setVisitsModalOpen] = useState(false);
+
+  const { data: visitsBreakdown, isLoading: isVisitsBreakdownLoading } = useQuery({
+    queryKey: ["menu-visits-breakdown", startDate, endDate],
+    queryFn: () => getMenuVisitsBreakdown(startDate, endDate),
+    enabled: visitsModalOpen,
+  });
 
   const funnelChartData = useMemo(() => {
     const items = funnelRawData?.perProduct || [];
@@ -1163,7 +1170,11 @@ const AdminGA4 = () => {
                               )}
                             </span>
                           </div>
-                          <div className="w-full bg-muted rounded-full h-8 overflow-hidden">
+                          <div
+                            className={`w-full bg-muted rounded-full h-8 overflow-hidden ${idx === 0 ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
+                            onClick={idx === 0 ? () => setVisitsModalOpen(true) : undefined}
+                            title={idx === 0 ? "Ver detalhes das visitas" : undefined}
+                          >
                             <div
                               className="h-full rounded-full flex items-center justify-center text-xs font-bold text-white transition-all duration-500"
                               style={{
@@ -1201,6 +1212,81 @@ const AdminGA4 = () => {
           </Card>
         </>
       )}
+
+      <Dialog open={visitsModalOpen} onOpenChange={setVisitsModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Detalhes das Visitas ao Cardápio</DialogTitle>
+            <DialogDescription>
+              Período: {startDate} até {endDate}
+            </DialogDescription>
+          </DialogHeader>
+
+          {isVisitsBreakdownLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          ) : !visitsBreakdown || visitsBreakdown.total === 0 ? (
+            <p className="text-muted-foreground text-center py-8">Sem visitas no período.</p>
+          ) : (
+            <ScrollArea className="flex-1 pr-4">
+              <div className="space-y-6">
+                <div className="grid grid-cols-3 gap-3">
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Total</p>
+                      <p className="text-2xl font-bold">{visitsBreakdown.total.toLocaleString("pt-BR")}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Novas (novos usuários)</p>
+                      <p className="text-2xl font-bold" style={{ color: "hsl(142, 76%, 36%)" }}>
+                        {visitsBreakdown.novas.toLocaleString("pt-BR")}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Recorrentes</p>
+                      <p className="text-2xl font-bold" style={{ color: "hsl(199, 89%, 48%)" }}>
+                        {visitsBreakdown.recorrentes.toLocaleString("pt-BR")}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {([
+                  { title: "Por utm_source", rows: visitsBreakdown.bySource },
+                  { title: "Por utm_campaign", rows: visitsBreakdown.byCampaign },
+                  { title: "Por utm_medium", rows: visitsBreakdown.byMedium },
+                  { title: "Por utm_content", rows: visitsBreakdown.byContent },
+                ]).map(({ title, rows }) => (
+                  <div key={title}>
+                    <h4 className="font-semibold mb-2">{title}</h4>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Valor</TableHead>
+                          <TableHead className="text-right">Visitas</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {rows.map((r) => (
+                          <TableRow key={r.key}>
+                            <TableCell className="font-medium">{r.key}</TableCell>
+                            <TableCell className="text-right">{r.count.toLocaleString("pt-BR")}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
