@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getSessionId, getVisitorId } from '@/utils/sessionId';
+import { getUtmParams } from '@/utils/utmCapture';
 
 /**
  * Marco temporal: o painel de inteligência ignora eventos anteriores a esta data,
@@ -33,6 +34,7 @@ interface ProductEventPayload {
 export const trackProductEvent = (payload: ProductEventPayload) => {
   const sessionId = getSessionId();
   const visitorId = getVisitorId();
+  const utms = getUtmParams();
 
   supabase
     .from('product_events' as any)
@@ -45,6 +47,11 @@ export const trackProductEvent = (payload: ProductEventPayload) => {
       quantity: payload.quantity ?? 1,
       session_id: sessionId,
       visitor_id: visitorId,
+      utm_source: utms.utm_source ?? null,
+      utm_medium: utms.utm_medium ?? null,
+      utm_campaign: utms.utm_campaign ?? null,
+      utm_content: utms.utm_content ?? null,
+      utm_term: utms.utm_term ?? null,
     })
     .then(({ error }) => {
       if (error) console.error('Error tracking product event:', error);
@@ -57,7 +64,7 @@ export const trackProductEvent = (payload: ProductEventPayload) => {
 export const trackProductEventsBatch = (items: ProductEventPayload[]) => {
   const sessionId = getSessionId();
   const visitorId = getVisitorId();
-
+  const utms = getUtmParams();
 
   const rows = items.map(item => ({
     product_id: item.product_id,
@@ -68,6 +75,11 @@ export const trackProductEventsBatch = (items: ProductEventPayload[]) => {
     quantity: item.quantity ?? 1,
     session_id: sessionId,
     visitor_id: visitorId,
+    utm_source: utms.utm_source ?? null,
+    utm_medium: utms.utm_medium ?? null,
+    utm_campaign: utms.utm_campaign ?? null,
+    utm_content: utms.utm_content ?? null,
+    utm_term: utms.utm_term ?? null,
   }));
 
   supabase
@@ -254,5 +266,75 @@ export const getFunnelData = async (startDate: string, endDate: string): Promise
       addToCartSessions: addToCartSessions.size,
       purchaseSessions: purchaseSessions.size,
     },
+  };
+};
+
+// ---- Visitas ao cardápio: breakdown novas/recorrentes + UTM ----
+
+export interface VisitsBreakdown {
+  total: number;
+  novas: number;
+  recorrentes: number;
+  bySource: Array<{ key: string; count: number }>;
+  byMedium: Array<{ key: string; count: number }>;
+  byCampaign: Array<{ key: string; count: number }>;
+  byContent: Array<{ key: string; count: number }>;
+}
+
+const NOT_SET_LABEL = '(não definido)';
+
+export const getMenuVisitsBreakdown = async (
+  startDate: string,
+  endDate: string
+): Promise<VisitsBreakdown> => {
+  const requestedStart = new Date(`${startDate}T00:00:00`).toISOString();
+  const startIso = requestedStart < FUNNEL_CUTOFF_ISO ? FUNNEL_CUTOFF_ISO : requestedStart;
+  const endIso = new Date(`${endDate}T23:59:59.999`).toISOString();
+
+  const { data, error } = await supabase
+    .from('product_events' as any)
+    .select('event_type, session_id, utm_source, utm_medium, utm_campaign, utm_content')
+    .gte('created_at', startIso)
+    .lte('created_at', endIso)
+    .in('event_type', ['visita_cardapio_nova', 'visita_cardapio_recorrente']);
+
+  if (error || !data) {
+    console.error('Error fetching menu visits breakdown:', error);
+    return { total: 0, novas: 0, recorrentes: 0, bySource: [], byMedium: [], byCampaign: [], byContent: [] };
+  }
+
+  // Dedupe por session_id (uma sessão = uma visita)
+  const seen = new Map<string, any>();
+  (data as any[]).forEach((row) => {
+    const sid = row.session_id || `__no_session__${Math.random()}`;
+    // priorizar nova sobre recorrente se ambas existirem na mesma sessão
+    if (!seen.has(sid) || row.event_type === 'visita_cardapio_nova') {
+      seen.set(sid, row);
+    }
+  });
+
+  const rows = Array.from(seen.values());
+  const novas = rows.filter(r => r.event_type === 'visita_cardapio_nova').length;
+  const recorrentes = rows.filter(r => r.event_type === 'visita_cardapio_recorrente').length;
+
+  const tally = (field: string) => {
+    const map = new Map<string, number>();
+    rows.forEach((r) => {
+      const key = (r[field] as string) || NOT_SET_LABEL;
+      map.set(key, (map.get(key) || 0) + 1);
+    });
+    return Array.from(map.entries())
+      .map(([key, count]) => ({ key, count }))
+      .sort((a, b) => b.count - a.count);
+  };
+
+  return {
+    total: rows.length,
+    novas,
+    recorrentes,
+    bySource: tally('utm_source'),
+    byMedium: tally('utm_medium'),
+    byCampaign: tally('utm_campaign'),
+    byContent: tally('utm_content'),
   };
 };
