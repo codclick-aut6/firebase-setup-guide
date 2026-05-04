@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LayoutSettingsProvider } from "@/hooks/useLayoutSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { useTracking } from "@/hooks/useTracking";
 import AdminRoute from "@/components/AdminRoute";
