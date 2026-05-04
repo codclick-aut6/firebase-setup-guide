@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface LayoutSettings {
@@ -49,44 +49,120 @@ const defaults: LayoutSettings = {
   layout_colunas_mobile: '1',
 };
 
-export const useLayoutSettings = () => {
-  const [settings, setSettings] = useState<LayoutSettings>(defaults);
-  const [loading, setLoading] = useState(true);
+const CACHE_KEY = 'layout_settings_cache_v1';
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
 
-  const fetchSettings = async () => {
-    try {
-      const keys = Object.keys(defaults);
-      const { data, error } = await supabase
-        .from('configuracoes')
-        .select('chave, valor')
-        .in('chave', keys);
+interface CacheShape {
+  ts: number;
+  data: LayoutSettings;
+}
 
-      if (error) {
-        console.error('Erro ao buscar configurações de layout:', error);
-        return;
-      }
+const readCache = (): LayoutSettings | null => {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed: CacheShape = JSON.parse(raw);
+    if (!parsed?.data) return null;
+    if (Date.now() - parsed.ts > CACHE_TTL_MS) return null;
+    return { ...defaults, ...parsed.data };
+  } catch {
+    return null;
+  }
+};
 
-      if (data && data.length > 0) {
-        const merged = { ...defaults };
-        data.forEach((row) => {
-          if (row.chave in merged && row.valor) {
-            (merged as any)[row.chave] = row.valor;
-          }
-        });
-        setSettings(merged);
-      }
-    } catch (err) {
-      console.error('Erro ao buscar layout:', err);
-    } finally {
-      setLoading(false);
+const writeCache = (data: LayoutSettings) => {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+  } catch {
+    // ignore
+  }
+};
+
+interface LayoutSettingsContextValue {
+  settings: LayoutSettings;
+  loading: boolean;
+  refetch: () => Promise<void>;
+}
+
+const LayoutSettingsContext = createContext<LayoutSettingsContextValue | null>(null);
+
+// Promise compartilhada para deduplicar fetches paralelos
+let inflightFetch: Promise<LayoutSettings> | null = null;
+
+const fetchLayoutSettings = async (): Promise<LayoutSettings> => {
+  if (inflightFetch) return inflightFetch;
+
+  inflightFetch = (async () => {
+    const keys = Object.keys(defaults);
+    const { data, error } = await supabase
+      .from('configuracoes')
+      .select('chave, valor')
+      .in('chave', keys);
+
+    if (error) {
+      console.error('Erro ao buscar configurações de layout:', error);
+      return defaults;
     }
-  };
 
-  useEffect(() => {
-    fetchSettings();
+    const merged = { ...defaults };
+    if (data && data.length > 0) {
+      data.forEach((row) => {
+        if (row.chave in merged && row.valor) {
+          (merged as any)[row.chave] = row.valor;
+        }
+      });
+    }
+    writeCache(merged);
+    return merged;
+  })();
+
+  try {
+    return await inflightFetch;
+  } finally {
+    inflightFetch = null;
+  }
+};
+
+export const LayoutSettingsProvider = ({ children }: { children: ReactNode }) => {
+  const cached = readCache();
+  const [settings, setSettings] = useState<LayoutSettings>(cached ?? defaults);
+  const [loading, setLoading] = useState(!cached);
+
+  const refetch = useCallback(async () => {
+    const fresh = await fetchLayoutSettings();
+    setSettings(fresh);
+    setLoading(false);
   }, []);
 
-  return { settings, loading, refetch: fetchSettings };
+  useEffect(() => {
+    if (cached) {
+      // Já temos cache válido — não precisa refetch
+      return;
+    }
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return React.createElement(
+    LayoutSettingsContext.Provider,
+    { value: { settings, loading, refetch } },
+    children
+  );
+};
+
+export const useLayoutSettings = () => {
+  const ctx = useContext(LayoutSettingsContext);
+  if (ctx) return ctx;
+
+  // Fallback: caso algum componente seja renderizado fora do Provider,
+  // mantém compatibilidade retornando defaults sem disparar fetch.
+  return {
+    settings: readCache() ?? defaults,
+    loading: false,
+    refetch: async () => {
+      await fetchLayoutSettings();
+    },
+  };
 };
 
 export const saveLayoutSetting = async (chave: string, valor: string) => {
@@ -107,5 +183,12 @@ export const saveLayoutSetting = async (chave: string, valor: string) => {
       .from('configuracoes')
       .insert({ chave, valor });
     if (error) throw error;
+  }
+
+  // Invalida cache para forçar refetch na próxima leitura
+  try {
+    localStorage.removeItem(CACHE_KEY);
+  } catch {
+    // ignore
   }
 };
