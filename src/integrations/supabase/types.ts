@@ -622,6 +622,8 @@ export type Database = {
           phone: string | null
           role: string | null
           user_id: string | null
+          utm_campaign: string | null
+          utm_source: string | null
           whatsapp_auth_code: string | null
         }
         Insert: {
@@ -634,6 +636,8 @@ export type Database = {
           phone?: string | null
           role?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_source?: string | null
           whatsapp_auth_code?: string | null
         }
         Update: {
@@ -646,6 +650,8 @@ export type Database = {
           phone?: string | null
           role?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_source?: string | null
           whatsapp_auth_code?: string | null
         }
         Relationships: []
