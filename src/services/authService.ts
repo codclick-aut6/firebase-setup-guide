@@ -9,6 +9,7 @@ import {
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { supabase } from "@/integrations/supabase/client";
+import { getUtmParams } from "@/utils/utmCapture";
 
 // ============================================
 // SIGN UP (com envio direto para n8n) - Rwmovido do n8n 08/04/2026
@@ -45,6 +46,7 @@ export async function signUp(
 
     // Salva usuário no Supabase com role "user"
     try {
+      const utms = getUtmParams();
       const { data, error: supabaseError } = await supabase
         .from('users')
         .upsert({
@@ -55,6 +57,8 @@ export async function signUp(
           created_at: new Date().toISOString(),
           last_sign_in_at: new Date().toISOString(),
           role: "user",
+          utm_source: utms.utm_source || "direto",
+          utm_campaign: utms.utm_campaign || "direto",
         }, { onConflict: 'firebase_id' })
         .select()
         .single();
