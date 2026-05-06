@@ -1185,12 +1185,14 @@ const AdminGA4 = () => {
                             </span>
                           </div>
                           <div
-                            className={`w-full bg-muted rounded-full h-8 overflow-hidden ${idx === 0 || idx === 2 ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
+                            className={`w-full bg-muted rounded-full h-8 overflow-hidden ${idx === 0 || idx === 2 || idx === 3 ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
                             onClick={
                               idx === 0
                                 ? () => setVisitsModalOpen(true)
                                 : idx === 2
                                 ? () => setCartModalOpen(true)
+                                : idx === 3
+                                ? () => setCheckoutModalOpen(true)
                                 : undefined
                             }
                             title={
@@ -1198,6 +1200,8 @@ const AdminGA4 = () => {
                                 ? "Ver detalhes das visitas"
                                 : idx === 2
                                 ? "Ver detalhes dos add ao carrinho"
+                                : idx === 3
+                                ? "Ver tempo médio até finalizar"
                                 : undefined
                             }
                           >
