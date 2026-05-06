@@ -39,8 +39,7 @@ import {
   fetchSalesHeatmap, fetchSalesBySource, fetchSalesByCampaign, fetchItemPerformance,
   fetchCampaignDetail, fetchSourceDetail, fetchSalesByMedium, fetchSalesByContent, fetchSalesByTerm,
 } from "@/services/salesAnalyticsService";
-import { getFunnelData, getMenuVisitsBreakdown, getProductViewsBreakdown, getCartStageBreakdown, type FunnelData } from "@/services/productEventService";
-import { getLTVByUtmSource, getLTVByUtmCampaign } from "@/services/ltvService";
+import { getFunnelData, getMenuVisitsBreakdown, getAddToCartBreakdown, type FunnelData } from "@/services/productEventService";
 import { formatCurrency } from "@/lib/utils";
 
 const dailyChartConfig: ChartConfig = {
@@ -130,18 +129,6 @@ const AdminGA4 = () => {
     queryFn: () => fetchSalesByMedium(startDate, endDate),
   });
 
-  const { data: ltvData } = useQuery({
-    queryKey: ["ltv-by-utm-source", startDate, endDate],
-    queryFn: () => getLTVByUtmSource(`${startDate}T00:00:00`, `${endDate}T23:59:59.999`),
-  });
-
-  const { data: ltvCampaignData } = useQuery({
-    queryKey: ["ltv-by-utm-campaign", startDate, endDate],
-    queryFn: () => getLTVByUtmCampaign(`${startDate}T00:00:00`, `${endDate}T23:59:59.999`),
-  });
-
-  const [selectedLtvCampaign, setSelectedLtvCampaign] = useState<string>("");
-
   const { data: salesByContentData } = useQuery({
     queryKey: ["sales-by-content", startDate, endDate],
     queryFn: () => fetchSalesByContent(startDate, endDate),
@@ -165,7 +152,6 @@ const AdminGA4 = () => {
 
   const [funnelProduct, setFunnelProduct] = useState<string>("all");
   const [visitsModalOpen, setVisitsModalOpen] = useState(false);
-  const [viewsModalOpen, setViewsModalOpen] = useState(false);
   const [cartModalOpen, setCartModalOpen] = useState(false);
 
   const { data: visitsBreakdown, isLoading: isVisitsBreakdownLoading } = useQuery({
@@ -174,15 +160,9 @@ const AdminGA4 = () => {
     enabled: visitsModalOpen,
   });
 
-  const { data: viewsBreakdown, isLoading: isViewsBreakdownLoading } = useQuery({
-    queryKey: ["product-views-breakdown", startDate, endDate],
-    queryFn: () => getProductViewsBreakdown(startDate, endDate),
-    enabled: viewsModalOpen,
-  });
-
   const { data: cartBreakdown, isLoading: isCartBreakdownLoading } = useQuery({
-    queryKey: ["cart-stage-breakdown", startDate, endDate],
-    queryFn: () => getCartStageBreakdown(startDate, endDate),
+    queryKey: ["add-to-cart-breakdown", startDate, endDate],
+    queryFn: () => getAddToCartBreakdown(startDate, endDate),
     enabled: cartModalOpen,
   });
 
@@ -1198,17 +1178,21 @@ const AdminGA4 = () => {
                             </span>
                           </div>
                           <div
-                            className={`w-full bg-muted rounded-full h-8 overflow-hidden ${idx === 0 || idx === 1 || idx === 2 ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
+                            className={`w-full bg-muted rounded-full h-8 overflow-hidden ${idx === 0 || idx === 2 ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
                             onClick={
                               idx === 0
                                 ? () => setVisitsModalOpen(true)
-                                : idx === 1
-                                ? () => setViewsModalOpen(true)
                                 : idx === 2
                                 ? () => setCartModalOpen(true)
                                 : undefined
                             }
-                            title={idx === 0 ? "Ver detalhes das visitas" : idx === 1 ? "Ver detalhes das visualizações" : idx === 2 ? "Ver detalhes do carrinho" : undefined}
+                            title={
+                              idx === 0
+                                ? "Ver detalhes das visitas"
+                                : idx === 2
+                                ? "Ver detalhes dos add ao carrinho"
+                                : undefined
+                            }
                           >
                             <div
                               className="h-full rounded-full flex items-center justify-center text-xs font-bold text-white transition-all duration-500"
@@ -1323,111 +1307,10 @@ const AdminGA4 = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={viewsModalOpen} onOpenChange={setViewsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Detalhes das Visualizações de Produtos</DialogTitle>
-            <DialogDescription>
-              Período: {startDate} até {endDate}
-            </DialogDescription>
-          </DialogHeader>
-
-          {isViewsBreakdownLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-            </div>
-          ) : !viewsBreakdown || viewsBreakdown.totalViews === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Sem visualizações no período.</p>
-          ) : (
-            <ScrollArea className="flex-1 pr-4">
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-semibold mb-2">Top 3 Categorias Mais Clicadas</h4>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead className="text-right">Visualizações</TableHead>
-                        <TableHead className="text-right">%</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {viewsBreakdown.topCategories.map((c) => (
-                        <TableRow key={c.category}>
-                          <TableCell className="font-medium">{c.category}</TableCell>
-                          <TableCell className="text-right">{c.views.toLocaleString("pt-BR")}</TableCell>
-                          <TableCell className="text-right font-semibold">{c.pct.toFixed(1)}%</TableCell>
-                        </TableRow>
-                      ))}
-                      {viewsBreakdown.othersCategoryPct > 0 && (
-                        <TableRow>
-                          <TableCell className="text-muted-foreground">Outros</TableCell>
-                          <TableCell className="text-right text-muted-foreground">—</TableCell>
-                          <TableCell className="text-right text-muted-foreground">{viewsBreakdown.othersCategoryPct.toFixed(1)}%</TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">5 Produtos com mais visualizações</h4>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Produto</TableHead>
-                        <TableHead className="text-right">Visualizações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {viewsBreakdown.topProducts.length === 0 ? (
-                        <TableRow><TableCell colSpan={2} className="text-muted-foreground text-center">Sem dados.</TableCell></TableRow>
-                      ) : viewsBreakdown.topProducts.map((p) => (
-                        <TableRow key={p.product_id}>
-                          <TableCell className="font-medium">{p.product_name}</TableCell>
-                          <TableCell className="text-right">{p.views.toLocaleString("pt-BR")}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-1">5 Produtos "Iscas"</h4>
-                  <p className="text-xs text-muted-foreground mb-2">Muitas visualizações, mas menos de 40% de adição ao carrinho.</p>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Produto</TableHead>
-                        <TableHead className="text-right">Views</TableHead>
-                        <TableHead className="text-right">Add carrinho</TableHead>
-                        <TableHead className="text-right">Conversão</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {viewsBreakdown.iscas.length === 0 ? (
-                        <TableRow><TableCell colSpan={4} className="text-muted-foreground text-center">Nenhum produto isca identificado.</TableCell></TableRow>
-                      ) : viewsBreakdown.iscas.map((p) => (
-                        <TableRow key={p.product_id}>
-                          <TableCell className="font-medium">{p.product_name}</TableCell>
-                          <TableCell className="text-right">{p.views.toLocaleString("pt-BR")}</TableCell>
-                          <TableCell className="text-right">{p.addToCart.toLocaleString("pt-BR")}</TableCell>
-                          <TableCell className="text-right font-semibold text-destructive">{p.conversionPct.toFixed(1)}%</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </ScrollArea>
-          )}
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={cartModalOpen} onOpenChange={setCartModalOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Detalhes do Carrinho (Add ao Carrinho)</DialogTitle>
+            <DialogTitle>Detalhes dos Add ao Carrinho</DialogTitle>
             <DialogDescription>
               Período: {startDate} até {endDate}
             </DialogDescription>
@@ -1437,228 +1320,68 @@ const AdminGA4 = () => {
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
             </div>
-          ) : !cartBreakdown || cartBreakdown.cartSessions === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Sem dados de carrinho no período.</p>
+          ) : !cartBreakdown || cartBreakdown.totalEvents === 0 ? (
+            <p className="text-muted-foreground text-center py-8">Sem add ao carrinho no período.</p>
           ) : (
             <ScrollArea className="flex-1 pr-4">
               <div className="space-y-6">
-                <div>
-                  <h4 className="font-semibold mb-2">Ticket Médio do Carrinho</h4>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Valor médio dos carrinhos antes do checkout (soma de itens adicionados por sessão).
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Card>
-                      <CardContent className="pt-4">
-                        <p className="text-xs text-muted-foreground">Ticket Médio</p>
-                        <p className="text-2xl font-bold" style={{ color: "hsl(142, 76%, 36%)" }}>
-                          {formatCurrency(cartBreakdown.avgCartTicket)}
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="pt-4">
-                        <p className="text-xs text-muted-foreground">Carrinhos (sessões)</p>
-                        <p className="text-2xl font-bold">{cartBreakdown.cartSessions.toLocaleString("pt-BR")}</p>
-                      </CardContent>
-                    </Card>
-                  </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Valor Total</p>
+                      <p className="text-2xl font-bold" style={{ color: "hsl(142, 76%, 36%)" }}>
+                        {formatCurrency(cartBreakdown.totalValue)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Itens Adicionados</p>
+                      <p className="text-2xl font-bold">{cartBreakdown.totalQuantity.toLocaleString("pt-BR")}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Eventos</p>
+                      <p className="text-2xl font-bold">{cartBreakdown.totalEvents.toLocaleString("pt-BR")}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Sessões</p>
+                      <p className="text-2xl font-bold">{cartBreakdown.totalSessions.toLocaleString("pt-BR")}</p>
+                    </CardContent>
+                  </Card>
                 </div>
 
                 <div>
-                  <h4 className="font-semibold mb-2">Interação com Cupons</h4>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Quantos usuários tentaram aplicar um cupom e quantos falharam (cupom inválido pode gerar abandono).
-                  </p>
-                  <div className="grid grid-cols-3 gap-3">
-                    <Card>
-                      <CardContent className="pt-4">
-                        <p className="text-xs text-muted-foreground">Sessões que tentaram</p>
-                        <p className="text-2xl font-bold">
-                          {cartBreakdown.couponAttemptSessions.toLocaleString("pt-BR")}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          {cartBreakdown.totalAttempts.toLocaleString("pt-BR")} tentativas no total
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="pt-4">
-                        <p className="text-xs text-muted-foreground">Sessões com falha</p>
-                        <p className="text-2xl font-bold" style={{ color: "hsl(var(--destructive))" }}>
-                          {cartBreakdown.couponFailedSessions.toLocaleString("pt-BR")}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          {cartBreakdown.totalFailures.toLocaleString("pt-BR")} falhas no total
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="pt-4">
-                        <p className="text-xs text-muted-foreground">Taxa de falha</p>
-                        <p className="text-2xl font-bold" style={{ color: "hsl(25, 95%, 53%)" }}>
-                          {cartBreakdown.couponAttemptSessions > 0
-                            ? ((cartBreakdown.couponFailedSessions / cartBreakdown.couponAttemptSessions) * 100).toFixed(1)
-                            : "0.0"}%
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          falhas / tentativas (sessões)
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <h4 className="font-semibold mb-2">Por produto</h4>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Produto</TableHead>
+                        <TableHead className="text-right">Qtd</TableHead>
+                        <TableHead className="text-right">Sessões</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {cartBreakdown.byProduct.map((r) => (
+                        <TableRow key={r.product_id}>
+                          <TableCell className="font-medium">{r.product_name}</TableCell>
+                          <TableCell className="text-right">{r.quantity.toLocaleString("pt-BR")}</TableCell>
+                          <TableCell className="text-right">{r.sessions.toLocaleString("pt-BR")}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(r.value)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             </ScrollArea>
           )}
         </DialogContent>
       </Dialog>
-
-      <div className="mt-12 space-y-6">
-        <div className="flex items-center gap-2">
-          <DollarSign className="h-5 w-5 text-primary" />
-          <h2 className="text-xl font-bold">Lifetime Value (LTV)</h2>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Receita total por origem</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {ltvData && ltvData.rows.length > 0 ? (
-                <ChartContainer config={{ total_revenue: { label: "Receita", color: "hsl(var(--primary))" } }} className="h-[260px] w-full">
-                  <BarChart data={ltvData.rows}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="utm_source" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <ChartTooltip content={<ChartTooltipContent formatter={(v: any) => formatCurrency(Number(v))} />} />
-                    <Bar dataKey="total_revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ChartContainer>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-12">Sem dados no período.</p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Receita total por campanha</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {ltvCampaignData && ltvCampaignData.length > 0 ? (
-                <ChartContainer config={{ total_revenue: { label: "Receita", color: "hsl(142, 76%, 36%)" } }} className="h-[260px] w-full">
-                  <BarChart data={ltvCampaignData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="utm_campaign" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <ChartTooltip content={<ChartTooltipContent formatter={(v: any) => formatCurrency(Number(v))} />} />
-                    <Bar dataKey="total_revenue" fill="hsl(142, 76%, 36%)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ChartContainer>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-12">Sem dados no período.</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">LTV por campanha</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Select value={selectedLtvCampaign} onValueChange={setSelectedLtvCampaign}>
-              <SelectTrigger className="w-full sm:w-[320px]">
-                <SelectValue placeholder="Selecione uma campanha" />
-              </SelectTrigger>
-              <SelectContent>
-                {(ltvCampaignData || []).map((c) => (
-                  <SelectItem key={c.utm_campaign} value={c.utm_campaign}>
-                    {c.utm_campaign}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {(() => {
-              const selected = (ltvCampaignData || []).find((c) => c.utm_campaign === selectedLtvCampaign);
-              if (!selected) {
-                return <p className="text-sm text-muted-foreground">Selecione uma campanha para ver o LTV trazido por ela.</p>;
-              }
-              return (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="rounded-lg border p-4">
-                    <p className="text-xs text-muted-foreground">Clientes</p>
-                    <p className="text-2xl font-bold">{selected.customer_count}</p>
-                  </div>
-                  <div className="rounded-lg border p-4">
-                    <p className="text-xs text-muted-foreground">Receita total</p>
-                    <p className="text-2xl font-bold">{formatCurrency(selected.total_revenue)}</p>
-                  </div>
-                  <div className="rounded-lg border p-4 bg-primary/5">
-                    <p className="text-xs text-muted-foreground">LTV médio</p>
-                    <p className="text-2xl font-bold text-primary">{formatCurrency(selected.avg_ltv)}</p>
-                  </div>
-                </div>
-              );
-            })()}
-          </CardContent>
-        </Card>
-
-        {ltvData && ltvData.rows.length > 1 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">LTV médio por origem (first_utm_source)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Origem</TableHead>
-                    <TableHead className="text-right">Clientes</TableHead>
-                    <TableHead className="text-right">Receita total</TableHead>
-                    <TableHead className="text-right">LTV médio</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {ltvData.rows.map((r) => (
-                    <TableRow key={r.utm_source}>
-                      <TableCell className="font-medium">{r.utm_source}</TableCell>
-                      <TableCell className="text-right">{r.customer_count}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(r.total_revenue)}</TableCell>
-                      <TableCell className="text-right font-semibold">{formatCurrency(r.avg_ltv)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
-
-        {ltvData && ltvData.topSource && (
-          <Card className="border-primary/40 bg-gradient-to-r from-primary/10 to-transparent">
-            <CardContent className="flex items-start gap-4 py-5">
-              <div className="rounded-full bg-primary/15 p-3">
-                <DollarSign className="h-6 w-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
-                  Insight de LTV
-                </p>
-                <p className="text-base font-semibold">
-                  A origem <span className="text-primary">"{ltvData.topSource.utm_source}"</span> tem o maior LTV médio:{" "}
-                  <span className="text-primary">{formatCurrency(ltvData.topSource.avg_ltv)}</span>
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Baseado em {ltvData.topSource.customer_count} cliente(s) · Receita total: {formatCurrency(ltvData.topSource.total_revenue)}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
     </div>
   );
 };

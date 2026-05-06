@@ -17,9 +17,7 @@ export type ProductEventType =
   | 'update_cart_quantity'
   | 'update_checkout_quantity'
   | 'visita_cardapio_nova'
-  | 'visita_cardapio_recorrente'
-  | 'coupon_attempt'
-  | 'coupon_failed';
+  | 'visita_cardapio_recorrente';
 
 interface ProductEventPayload {
   product_id: string;
@@ -341,172 +339,80 @@ export const getMenuVisitsBreakdown = async (
   };
 };
 
-// ---- Visualizações de produtos: breakdown por categoria + top produtos + iscas ----
+// ---- Add to cart: total value and breakdown by product ----
 
-export interface ProductViewsBreakdown {
-  totalViews: number;
-  topCategories: Array<{ category: string; views: number; pct: number }>;
-  othersCategoryPct: number;
-  topProducts: Array<{ product_id: string; product_name: string; views: number }>;
-  iscas: Array<{ product_id: string; product_name: string; views: number; addToCart: number; conversionPct: number }>;
+export interface AddToCartProductRow {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  value: number;
+  sessions: number;
 }
 
-export const getProductViewsBreakdown = async (
+export interface AddToCartBreakdown {
+  totalValue: number;
+  totalQuantity: number;
+  totalSessions: number;
+  totalEvents: number;
+  byProduct: AddToCartProductRow[];
+}
+
+export const getAddToCartBreakdown = async (
   startDate: string,
   endDate: string
-): Promise<ProductViewsBreakdown> => {
+): Promise<AddToCartBreakdown> => {
   const requestedStart = new Date(`${startDate}T00:00:00`).toISOString();
   const startIso = requestedStart < FUNNEL_CUTOFF_ISO ? FUNNEL_CUTOFF_ISO : requestedStart;
   const endIso = new Date(`${endDate}T23:59:59.999`).toISOString();
 
   const { data, error } = await supabase
     .from('product_events' as any)
-    .select('product_id, product_name, category, event_type, session_id')
+    .select('product_id, product_name, price, quantity, session_id')
+    .eq('event_type', 'add_to_cart')
     .gte('created_at', startIso)
-    .lte('created_at', endIso)
-    .in('event_type', ['view_item', 'add_to_cart']);
+    .lte('created_at', endIso);
 
   if (error || !data) {
-    console.error('Error fetching product views breakdown:', error);
-    return { totalViews: 0, topCategories: [], othersCategoryPct: 0, topProducts: [], iscas: [] };
+    console.error('Error fetching add_to_cart breakdown:', error);
+    return { totalValue: 0, totalQuantity: 0, totalSessions: 0, totalEvents: 0, byProduct: [] };
   }
 
-  // Sessões únicas por (produto, evento) e por (categoria, evento view)
-  const viewSessionsByProduct = new Map<string, Set<string>>();
-  const cartSessionsByProduct = new Map<string, Set<string>>();
-  const viewSessionsByCategory = new Map<string, Set<string>>();
-  const productInfo = new Map<string, { name: string; category: string }>();
+  const map = new Map<string, { product_name: string; quantity: number; value: number; sessions: Set<string> }>();
+  const allSessions = new Set<string>();
+  let totalValue = 0;
+  let totalQuantity = 0;
 
   (data as any[]).forEach((row) => {
-    const sid = row.session_id || `__no_session__${row.product_id}__${row.event_type}__${Math.random()}`;
-    const pid = row.product_id;
-    const cat = row.category || '(sem categoria)';
-    if (!productInfo.has(pid)) productInfo.set(pid, { name: row.product_name, category: cat });
+    const qty = Number(row.quantity ?? 1);
+    const price = Number(row.price ?? 0);
+    const value = price * qty;
+    totalValue += value;
+    totalQuantity += qty;
+    if (row.session_id) allSessions.add(row.session_id);
 
-    if (row.event_type === 'view_item') {
-      if (!viewSessionsByProduct.has(pid)) viewSessionsByProduct.set(pid, new Set());
-      viewSessionsByProduct.get(pid)!.add(sid);
-      if (!viewSessionsByCategory.has(cat)) viewSessionsByCategory.set(cat, new Set());
-      viewSessionsByCategory.get(cat)!.add(sid);
-    } else if (row.event_type === 'add_to_cart') {
-      if (!cartSessionsByProduct.has(pid)) cartSessionsByProduct.set(pid, new Set());
-      cartSessionsByProduct.get(pid)!.add(sid);
-    }
+    const id = row.product_id;
+    const existing = map.get(id) || { product_name: row.product_name, quantity: 0, value: 0, sessions: new Set<string>() };
+    existing.quantity += qty;
+    existing.value += value;
+    if (row.session_id) existing.sessions.add(row.session_id);
+    map.set(id, existing);
   });
 
-  const totalViews = Array.from(viewSessionsByProduct.values()).reduce((sum, s) => sum + s.size, 0);
-  const totalCategoryViews = Array.from(viewSessionsByCategory.values()).reduce((sum, s) => sum + s.size, 0);
-
-  const allCategories = Array.from(viewSessionsByCategory.entries())
-    .map(([category, set]) => ({ category, views: set.size }))
-    .sort((a, b) => b.views - a.views);
-
-  const top3 = allCategories.slice(0, 3).map(c => ({
-    ...c,
-    pct: totalCategoryViews > 0 ? (c.views / totalCategoryViews) * 100 : 0,
-  }));
-  const othersViews = allCategories.slice(3).reduce((sum, c) => sum + c.views, 0);
-  const othersCategoryPct = totalCategoryViews > 0 ? (othersViews / totalCategoryViews) * 100 : 0;
-
-  const productsWithViews = Array.from(viewSessionsByProduct.entries()).map(([pid, set]) => {
-    const info = productInfo.get(pid)!;
-    const views = set.size;
-    const addToCart = cartSessionsByProduct.get(pid)?.size || 0;
-    return {
-      product_id: pid,
-      product_name: info.name,
-      views,
-      addToCart,
-      conversionPct: views > 0 ? (addToCart / views) * 100 : 0,
-    };
-  });
-
-  const topProducts = [...productsWithViews]
-    .sort((a, b) => b.views - a.views)
-    .slice(0, 5)
-    .map(({ product_id, product_name, views }) => ({ product_id, product_name, views }));
-
-  const iscas = productsWithViews
-    .filter(p => p.conversionPct < 40)
-    .sort((a, b) => b.views - a.views)
-    .slice(0, 5);
-
-  return { totalViews, topCategories: top3, othersCategoryPct, topProducts, iscas };
-};
-
-// ---- Carrinho (etapa 3): ticket médio + interação com cupons ----
-
-export interface CartBreakdown {
-  /** Sessões únicas que tiveram add_to_cart no período. */
-  cartSessions: number;
-  /** Ticket médio por sessão (soma de price*quantity dos add_to_cart por sessão, média). */
-  avgCartTicket: number;
-  /** Sessões únicas que tentaram aplicar um cupom. */
-  couponAttemptSessions: number;
-  /** Sessões únicas em que o cupom falhou (cupom inválido). */
-  couponFailedSessions: number;
-  /** Total bruto de tentativas (eventos). */
-  totalAttempts: number;
-  /** Total bruto de falhas (eventos). */
-  totalFailures: number;
-}
-
-export const getCartStageBreakdown = async (
-  startDate: string,
-  endDate: string
-): Promise<CartBreakdown> => {
-  const requestedStart = new Date(`${startDate}T00:00:00`).toISOString();
-  const startIso = requestedStart < FUNNEL_CUTOFF_ISO ? FUNNEL_CUTOFF_ISO : requestedStart;
-  const endIso = new Date(`${endDate}T23:59:59.999`).toISOString();
-
-  const { data, error } = await supabase
-    .from('product_events' as any)
-    .select('event_type, session_id, price, quantity')
-    .gte('created_at', startIso)
-    .lte('created_at', endIso)
-    .in('event_type', ['add_to_cart', 'coupon_attempt', 'coupon_failed']);
-
-  if (error || !data) {
-    console.error('Error fetching cart stage breakdown:', error);
-    return {
-      cartSessions: 0,
-      avgCartTicket: 0,
-      couponAttemptSessions: 0,
-      couponFailedSessions: 0,
-      totalAttempts: 0,
-      totalFailures: 0,
-    };
-  }
-
-  const cartTotalsBySession = new Map<string, number>();
-  const couponAttemptSessions = new Set<string>();
-  const couponFailedSessions = new Set<string>();
-  let totalAttempts = 0;
-  let totalFailures = 0;
-
-  (data as any[]).forEach((row) => {
-    const sid = row.session_id || `__no_session__${Math.random()}`;
-    if (row.event_type === 'add_to_cart') {
-      const value = (row.price ?? 0) * (row.quantity ?? 1);
-      cartTotalsBySession.set(sid, (cartTotalsBySession.get(sid) || 0) + value);
-    } else if (row.event_type === 'coupon_attempt') {
-      couponAttemptSessions.add(sid);
-      totalAttempts += 1;
-    } else if (row.event_type === 'coupon_failed') {
-      couponFailedSessions.add(sid);
-      totalFailures += 1;
-    }
-  });
-
-  const totals = Array.from(cartTotalsBySession.values());
-  const avgCartTicket = totals.length > 0 ? totals.reduce((s, v) => s + v, 0) / totals.length : 0;
+  const byProduct: AddToCartProductRow[] = Array.from(map.entries())
+    .map(([product_id, v]) => ({
+      product_id,
+      product_name: v.product_name,
+      quantity: v.quantity,
+      value: v.value,
+      sessions: v.sessions.size,
+    }))
+    .sort((a, b) => b.value - a.value);
 
   return {
-    cartSessions: cartTotalsBySession.size,
-    avgCartTicket,
-    couponAttemptSessions: couponAttemptSessions.size,
-    couponFailedSessions: couponFailedSessions.size,
-    totalAttempts,
-    totalFailures,
+    totalValue,
+    totalQuantity,
+    totalSessions: allSessions.size,
+    totalEvents: data.length,
+    byProduct,
   };
 };
