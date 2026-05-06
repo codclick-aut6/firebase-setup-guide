@@ -39,7 +39,7 @@ import {
   fetchSalesHeatmap, fetchSalesBySource, fetchSalesByCampaign, fetchItemPerformance,
   fetchCampaignDetail, fetchSourceDetail, fetchSalesByMedium, fetchSalesByContent, fetchSalesByTerm,
 } from "@/services/salesAnalyticsService";
-import { getFunnelData, getMenuVisitsBreakdown, type FunnelData } from "@/services/productEventService";
+import { getFunnelData, getMenuVisitsBreakdown, getAddToCartBreakdown, type FunnelData } from "@/services/productEventService";
 import { formatCurrency } from "@/lib/utils";
 
 const dailyChartConfig: ChartConfig = {
