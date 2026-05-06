@@ -39,7 +39,7 @@ import {
   fetchSalesHeatmap, fetchSalesBySource, fetchSalesByCampaign, fetchItemPerformance,
   fetchCampaignDetail, fetchSourceDetail, fetchSalesByMedium, fetchSalesByContent, fetchSalesByTerm,
 } from "@/services/salesAnalyticsService";
-import { getFunnelData, getMenuVisitsBreakdown, getAddToCartBreakdown, type FunnelData } from "@/services/productEventService";
+import { getFunnelData, getMenuVisitsBreakdown, getAddToCartBreakdown, getCheckoutDurationBreakdown, type FunnelData } from "@/services/productEventService";
 import { formatCurrency } from "@/lib/utils";
 
 const dailyChartConfig: ChartConfig = {
@@ -153,6 +153,7 @@ const AdminGA4 = () => {
   const [funnelProduct, setFunnelProduct] = useState<string>("all");
   const [visitsModalOpen, setVisitsModalOpen] = useState(false);
   const [cartModalOpen, setCartModalOpen] = useState(false);
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
 
   const { data: visitsBreakdown, isLoading: isVisitsBreakdownLoading } = useQuery({
     queryKey: ["menu-visits-breakdown", startDate, endDate],
@@ -164,6 +165,12 @@ const AdminGA4 = () => {
     queryKey: ["add-to-cart-breakdown", startDate, endDate],
     queryFn: () => getAddToCartBreakdown(startDate, endDate),
     enabled: cartModalOpen,
+  });
+
+  const { data: checkoutBreakdown, isLoading: isCheckoutBreakdownLoading } = useQuery({
+    queryKey: ["checkout-duration-breakdown", startDate, endDate],
+    queryFn: () => getCheckoutDurationBreakdown(startDate, endDate),
+    enabled: checkoutModalOpen,
   });
 
   const funnelChartData = useMemo(() => {
