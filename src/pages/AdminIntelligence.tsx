@@ -1393,6 +1393,89 @@ const AdminGA4 = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={checkoutModalOpen} onOpenChange={setCheckoutModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Início de Checkout</DialogTitle>
+            <DialogDescription>
+              Período: {startDate} até {endDate} · Tempo médio entre abrir o checkout e clicar em "Finalizar Pedido"
+              (sessões com mais de 15min são desconsideradas no cálculo)
+            </DialogDescription>
+          </DialogHeader>
+
+          {isCheckoutBreakdownLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          ) : !checkoutBreakdown || checkoutBreakdown.totalCheckoutSessions === 0 ? (
+            <p className="text-muted-foreground text-center py-8">Sem inícios de checkout no período.</p>
+          ) : (
+            <ScrollArea className="flex-1 pr-4">
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Tempo Médio</p>
+                      <p className="text-2xl font-bold" style={{ color: "hsl(280, 65%, 55%)" }}>
+                        {Math.floor(checkoutBreakdown.avgDurationSec / 60)}m {checkoutBreakdown.avgDurationSec % 60}s
+                      </p>
+                      <p className="text-xs text-muted-foreground">≤ 15min apenas</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Mediana</p>
+                      <p className="text-2xl font-bold">
+                        {Math.floor(checkoutBreakdown.medianDurationSec / 60)}m {checkoutBreakdown.medianDurationSec % 60}s
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Min / Max</p>
+                      <p className="text-lg font-bold">
+                        {Math.floor(checkoutBreakdown.minDurationSec / 60)}m {checkoutBreakdown.minDurationSec % 60}s
+                        {" · "}
+                        {Math.floor(checkoutBreakdown.maxDurationSec / 60)}m {checkoutBreakdown.maxDurationSec % 60}s
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Sessões em Checkout</p>
+                      <p className="text-2xl font-bold">{checkoutBreakdown.totalCheckoutSessions.toLocaleString("pt-BR")}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Finalizadas (≤15min)</p>
+                      <p className="text-2xl font-bold" style={{ color: "hsl(142, 76%, 36%)" }}>
+                        {checkoutBreakdown.completedSessions.toLocaleString("pt-BR")}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Carrinhos Abandonados (&gt;30min)</p>
+                      <p className="text-2xl font-bold text-destructive">
+                        {checkoutBreakdown.abandonedSessions.toLocaleString("pt-BR")}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {checkoutBreakdown.excludedOver15min > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {checkoutBreakdown.excludedOver15min.toLocaleString("pt-BR")} sessão(ões) finalizou(aram) acima de
+                    15min e foram desconsideradas do cálculo da média.
+                  </p>
+                )}
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
