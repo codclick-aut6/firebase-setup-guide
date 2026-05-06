@@ -436,6 +436,15 @@ const handleSubmit = async (e: React.FormEvent) => {
 const proceedWithOrder = async () => {
   setIsLoading(true);
 
+  // Mede o tempo entre abrir o checkout e clicar em finalizar
+  try {
+    const durationMs = Date.now() - checkoutStartRef.current;
+    finalizedRef.current = true;
+    trackCheckoutFinalize([...cartItems], finalTotal, durationMs);
+  } catch (e) {
+    console.error("Erro ao rastrear checkout_finalize:", e);
+  }
+
   try {
     const fullAddress = `${street}, ${number}${complement ? `, ${complement}` : ""} - ${neighborhood}, ${city} - ${state}`;
 
