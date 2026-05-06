@@ -152,11 +152,18 @@ const AdminGA4 = () => {
 
   const [funnelProduct, setFunnelProduct] = useState<string>("all");
   const [visitsModalOpen, setVisitsModalOpen] = useState(false);
+  const [cartModalOpen, setCartModalOpen] = useState(false);
 
   const { data: visitsBreakdown, isLoading: isVisitsBreakdownLoading } = useQuery({
     queryKey: ["menu-visits-breakdown", startDate, endDate],
     queryFn: () => getMenuVisitsBreakdown(startDate, endDate),
     enabled: visitsModalOpen,
+  });
+
+  const { data: cartBreakdown, isLoading: isCartBreakdownLoading } = useQuery({
+    queryKey: ["add-to-cart-breakdown", startDate, endDate],
+    queryFn: () => getAddToCartBreakdown(startDate, endDate),
+    enabled: cartModalOpen,
   });
 
   const funnelChartData = useMemo(() => {
