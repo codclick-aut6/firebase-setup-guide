@@ -349,8 +349,68 @@ export const trackInitiateCheckout = (cartItems: CartItem[], totalValue: number)
 };
 
 /**
- * ViewItemList — fired when a category/section of items is displayed.
+ * AbandonedCart — disparado quando o usuário fica >30min na página de checkout sem finalizar.
  */
+export const trackAbandonedCart = (cartItems: CartItem[], totalValue: number) => {
+  try {
+    if (cartItems.length > 0) {
+      trackProductEventsBatch(
+        cartItems.map(item => ({
+          product_id: item.id,
+          product_name: item.name,
+          event_type: 'abandoned_cart' as const,
+          price: item.price,
+          category: item.category,
+          quantity: item.quantity,
+        }))
+      );
+    }
+    fbqWithUid('trackCustom', 'AbandonedCart', {
+      content_ids: cartItems.map(i => i.id),
+      currency: 'BRL',
+      value: totalValue.toFixed(2),
+      num_items: cartItems.reduce((s, i) => s + i.quantity, 0),
+    });
+    pushDataLayer({
+      event: 'abandoned_cart',
+      ecommerce: {
+        currency: 'BRL',
+        value: totalValue,
+        items: cartItems.map((item, i) => buildItemPayload(item, i)),
+      },
+    });
+  } catch (e) {
+    console.error('trackAbandonedCart error:', e);
+  }
+};
+
+/**
+ * CheckoutFinalize — disparado no clique do botão "Finalizar Pedido".
+ * Usado para medir o tempo entre abrir o checkout e clicar em finalizar.
+ */
+export const trackCheckoutFinalize = (cartItems: CartItem[], totalValue: number, durationMs: number) => {
+  try {
+    if (cartItems.length > 0) {
+      trackProductEventsBatch(
+        cartItems.map(item => ({
+          product_id: item.id,
+          product_name: item.name,
+          event_type: 'checkout_finalize' as const,
+          price: item.price,
+          category: item.category,
+          quantity: item.quantity,
+        }))
+      );
+    }
+    pushDataLayer({
+      event: 'checkout_finalize',
+      duration_ms: durationMs,
+      ecommerce: { currency: 'BRL', value: totalValue },
+    });
+  } catch (e) {
+    console.error('trackCheckoutFinalize error:', e);
+  }
+};
 export const trackViewItemList = (params: {
   listName: string;
   items: Array<{ id: string; name: string; price: number; category?: string }>;
