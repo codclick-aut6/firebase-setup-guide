@@ -17,7 +17,9 @@ export type ProductEventType =
   | 'update_cart_quantity'
   | 'update_checkout_quantity'
   | 'visita_cardapio_nova'
-  | 'visita_cardapio_recorrente';
+  | 'visita_cardapio_recorrente'
+  | 'abandoned_cart'
+  | 'checkout_finalize';
 
 interface ProductEventPayload {
   product_id: string;
