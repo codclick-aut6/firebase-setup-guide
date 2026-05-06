@@ -338,3 +338,81 @@ export const getMenuVisitsBreakdown = async (
     byContent: tally('utm_content'),
   };
 };
+
+// ---- Add to cart: total value and breakdown by product ----
+
+export interface AddToCartProductRow {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  value: number;
+  sessions: number;
+}
+
+export interface AddToCartBreakdown {
+  totalValue: number;
+  totalQuantity: number;
+  totalSessions: number;
+  totalEvents: number;
+  byProduct: AddToCartProductRow[];
+}
+
+export const getAddToCartBreakdown = async (
+  startDate: string,
+  endDate: string
+): Promise<AddToCartBreakdown> => {
+  const requestedStart = new Date(`${startDate}T00:00:00`).toISOString();
+  const startIso = requestedStart < FUNNEL_CUTOFF_ISO ? FUNNEL_CUTOFF_ISO : requestedStart;
+  const endIso = new Date(`${endDate}T23:59:59.999`).toISOString();
+
+  const { data, error } = await supabase
+    .from('product_events' as any)
+    .select('product_id, product_name, price, quantity, session_id')
+    .eq('event_type', 'add_to_cart')
+    .gte('created_at', startIso)
+    .lte('created_at', endIso);
+
+  if (error || !data) {
+    console.error('Error fetching add_to_cart breakdown:', error);
+    return { totalValue: 0, totalQuantity: 0, totalSessions: 0, totalEvents: 0, byProduct: [] };
+  }
+
+  const map = new Map<string, { product_name: string; quantity: number; value: number; sessions: Set<string> }>();
+  const allSessions = new Set<string>();
+  let totalValue = 0;
+  let totalQuantity = 0;
+
+  (data as any[]).forEach((row) => {
+    const qty = Number(row.quantity ?? 1);
+    const price = Number(row.price ?? 0);
+    const value = price * qty;
+    totalValue += value;
+    totalQuantity += qty;
+    if (row.session_id) allSessions.add(row.session_id);
+
+    const id = row.product_id;
+    const existing = map.get(id) || { product_name: row.product_name, quantity: 0, value: 0, sessions: new Set<string>() };
+    existing.quantity += qty;
+    existing.value += value;
+    if (row.session_id) existing.sessions.add(row.session_id);
+    map.set(id, existing);
+  });
+
+  const byProduct: AddToCartProductRow[] = Array.from(map.entries())
+    .map(([product_id, v]) => ({
+      product_id,
+      product_name: v.product_name,
+      quantity: v.quantity,
+      value: v.value,
+      sessions: v.sessions.size,
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  return {
+    totalValue,
+    totalQuantity,
+    totalSessions: allSessions.size,
+    totalEvents: data.length,
+    byProduct,
+  };
+};
