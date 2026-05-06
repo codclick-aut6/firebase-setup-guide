@@ -13,6 +13,7 @@ import { Variation } from "@/types/menu";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { trackInitiateCheckout } from "@/utils/trackingEvents";
+import { trackProductEvent } from "@/services/productEventService";
 import { useLayoutSettings } from "@/hooks/useLayoutSettings";
 
 const ShoppingCart: React.FC = () => {
@@ -67,12 +68,21 @@ const ShoppingCart: React.FC = () => {
       return;
     }
 
+    const attemptedCode = couponCode.trim();
+    // Tracking: tentativa de aplicar cupom
+    trackProductEvent({
+      product_id: `coupon:${attemptedCode}`,
+      product_name: attemptedCode,
+      event_type: 'coupon_attempt',
+    });
+    let couponSuccess = false;
+
     setCouponLoading(true);
     try {
       const { data: cupom, error } = await supabase
         .from("cupons" as any)
         .select("*")
-        .ilike("nome", couponCode.trim())
+        .ilike("nome", attemptedCode)
         .maybeSingle();
 
       if (error || !cupom) {
@@ -171,6 +181,36 @@ const ShoppingCart: React.FC = () => {
         }
       }
 
+      // Validação extra para cupom "compre_e_ganhe": carrinho deve atender aos requisitos
+      if (cupomData.tipo === "compre_e_ganhe") {
+        const requeridos: any[] = Array.isArray(cupomData.produtos_requeridos)
+          ? cupomData.produtos_requeridos
+          : [];
+        const elegiveis = cartItems.filter((i: any) => !i.__couponGiftId);
+        const atende =
+          requeridos.length > 0 &&
+          requeridos.every((req: any) => {
+            const ehCategoria = req.tipo === "categoria";
+            const total = elegiveis
+              .filter((i: any) =>
+                ehCategoria
+                  ? req.category_id && i.category === req.category_id
+                  : i.id === req.product_id
+              )
+              .reduce((sum: number, i: any) => sum + (i.quantity || 0), 0);
+            return total >= (req.quantidade || 0);
+          });
+
+        if (!atende) {
+          toast({
+            title: "Requisitos não atendidos",
+            description: "Adicione os produtos exigidos para usar este cupom.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       // Aplicar cupom
       setAppliedCoupon({
         id: cupomData.id,
@@ -200,6 +240,7 @@ const ShoppingCart: React.FC = () => {
       });
 
       setCouponCode("");
+      couponSuccess = true;
     } catch (error) {
       console.error("Erro ao aplicar cupom:", error);
       toast({
@@ -208,6 +249,13 @@ const ShoppingCart: React.FC = () => {
         variant: "destructive",
       });
     } finally {
+      if (!couponSuccess) {
+        trackProductEvent({
+          product_id: `coupon:${attemptedCode}`,
+          product_name: attemptedCode,
+          event_type: 'coupon_failed',
+        });
+      }
       setCouponLoading(false);
     }
   };

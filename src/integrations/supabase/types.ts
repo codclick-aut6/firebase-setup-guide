@@ -616,42 +616,42 @@ export type Database = {
           created_at: string
           email: string | null
           firebase_id: string | null
+          first_utm_campaign: string | null
+          first_utm_source: string | null
           id: string
           last_sign_in_at: string | null
           name: string | null
           phone: string | null
           role: string | null
           user_id: string | null
-          utm_campaign: string | null
-          utm_source: string | null
           whatsapp_auth_code: string | null
         }
         Insert: {
           created_at: string
           email?: string | null
           firebase_id?: string | null
+          first_utm_campaign?: string | null
+          first_utm_source?: string | null
           id?: string
           last_sign_in_at?: string | null
           name?: string | null
           phone?: string | null
           role?: string | null
           user_id?: string | null
-          utm_campaign?: string | null
-          utm_source?: string | null
           whatsapp_auth_code?: string | null
         }
         Update: {
           created_at?: string
           email?: string | null
           firebase_id?: string | null
+          first_utm_campaign?: string | null
+          first_utm_source?: string | null
           id?: string
           last_sign_in_at?: string | null
           name?: string | null
           phone?: string | null
           role?: string | null
           user_id?: string | null
-          utm_campaign?: string | null
-          utm_source?: string | null
           whatsapp_auth_code?: string | null
         }
         Relationships: []
@@ -701,6 +701,24 @@ export type Database = {
           function_url: string
         }
         Returns: undefined
+      }
+      get_ltv_by_utm_campaign: {
+        Args: { end_date?: string; start_date?: string }
+        Returns: {
+          avg_ltv: number
+          customer_count: number
+          total_revenue: number
+          utm_campaign: string
+        }[]
+      }
+      get_ltv_by_utm_source: {
+        Args: { end_date?: string; start_date?: string }
+        Returns: {
+          avg_ltv: number
+          customer_count: number
+          total_revenue: number
+          utm_source: string
+        }[]
       }
       get_user_role:
         | {
