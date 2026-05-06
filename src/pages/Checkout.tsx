@@ -33,7 +33,7 @@ import { formatCurrency } from "@/lib/utils";
 import ProductVariationDialog from "@/components/ProductVariationDialog";
 import { getAllVariations } from "@/services/variationService";
 import { CartItem, MenuItem, Variation, SelectedVariationGroup, PizzaBorder } from "@/types/menu";
-import { trackPurchase, trackUpdateCheckoutQuantity } from "@/utils/trackingEvents";
+import { trackPurchase, trackUpdateCheckoutQuantity, trackAbandonedCart, trackCheckoutFinalize } from "@/utils/trackingEvents";
 import { getUtmParams } from "@/utils/utmCapture";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { phoneDigits as toPhoneDigits } from "@/utils/phoneUtils";
