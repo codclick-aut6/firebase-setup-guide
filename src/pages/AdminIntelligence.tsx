@@ -1178,9 +1178,21 @@ const AdminGA4 = () => {
                             </span>
                           </div>
                           <div
-                            className={`w-full bg-muted rounded-full h-8 overflow-hidden ${idx === 0 ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
-                            onClick={idx === 0 ? () => setVisitsModalOpen(true) : undefined}
-                            title={idx === 0 ? "Ver detalhes das visitas" : undefined}
+                            className={`w-full bg-muted rounded-full h-8 overflow-hidden ${idx === 0 || idx === 2 ? "cursor-pointer hover:opacity-90 transition-opacity" : ""}`}
+                            onClick={
+                              idx === 0
+                                ? () => setVisitsModalOpen(true)
+                                : idx === 2
+                                ? () => setCartModalOpen(true)
+                                : undefined
+                            }
+                            title={
+                              idx === 0
+                                ? "Ver detalhes das visitas"
+                                : idx === 2
+                                ? "Ver detalhes dos add ao carrinho"
+                                : undefined
+                            }
                           >
                             <div
                               className="h-full rounded-full flex items-center justify-center text-xs font-bold text-white transition-all duration-500"
