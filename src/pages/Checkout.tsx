@@ -92,6 +92,28 @@ const Checkout = () => {
   const [sendingOtp, setSendingOtp] = useState(false);
   const pendingSubmitRef = useRef<null | (() => void)>(null);
 
+  // Marca o instante em que o checkout foi aberto (para medir tempo até finalizar)
+  const checkoutStartRef = useRef<number>(Date.now());
+  const abandonedFiredRef = useRef<boolean>(false);
+  const finalizedRef = useRef<boolean>(false);
+
+  // Dispara "abandoned_cart" se o usuário ficar mais de 30 minutos no checkout sem finalizar
+  useEffect(() => {
+    const ABANDON_MS = 30 * 60 * 1000;
+    const timer = window.setTimeout(() => {
+      if (finalizedRef.current || abandonedFiredRef.current) return;
+      if (cartItems.length === 0) return;
+      abandonedFiredRef.current = true;
+      try {
+        trackAbandonedCart([...cartItems], finalTotal);
+      } catch (e) {
+        console.error("Erro ao disparar abandoned_cart:", e);
+      }
+    }, ABANDON_MS);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Preencher dados automaticamente se o usuário estiver logado
   useEffect(() => {
     const loadUserData = async () => {
