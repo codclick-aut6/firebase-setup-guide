@@ -33,7 +33,7 @@ import { formatCurrency } from "@/lib/utils";
 import ProductVariationDialog from "@/components/ProductVariationDialog";
 import { getAllVariations } from "@/services/variationService";
 import { CartItem, MenuItem, Variation, SelectedVariationGroup, PizzaBorder } from "@/types/menu";
-import { trackPurchase, trackUpdateCheckoutQuantity } from "@/utils/trackingEvents";
+import { trackPurchase, trackUpdateCheckoutQuantity, trackAbandonedCart, trackCheckoutFinalize } from "@/utils/trackingEvents";
 import { getUtmParams } from "@/utils/utmCapture";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { phoneDigits as toPhoneDigits } from "@/utils/phoneUtils";
@@ -91,6 +91,28 @@ const Checkout = () => {
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
   const pendingSubmitRef = useRef<null | (() => void)>(null);
+
+  // Marca o instante em que o checkout foi aberto (para medir tempo até finalizar)
+  const checkoutStartRef = useRef<number>(Date.now());
+  const abandonedFiredRef = useRef<boolean>(false);
+  const finalizedRef = useRef<boolean>(false);
+
+  // Dispara "abandoned_cart" se o usuário ficar mais de 30 minutos no checkout sem finalizar
+  useEffect(() => {
+    const ABANDON_MS = 30 * 60 * 1000;
+    const timer = window.setTimeout(() => {
+      if (finalizedRef.current || abandonedFiredRef.current) return;
+      if (cartItems.length === 0) return;
+      abandonedFiredRef.current = true;
+      try {
+        trackAbandonedCart([...cartItems], finalTotal);
+      } catch (e) {
+        console.error("Erro ao disparar abandoned_cart:", e);
+      }
+    }, ABANDON_MS);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Preencher dados automaticamente se o usuário estiver logado
   useEffect(() => {
@@ -413,6 +435,15 @@ const handleSubmit = async (e: React.FormEvent) => {
 
 const proceedWithOrder = async () => {
   setIsLoading(true);
+
+  // Mede o tempo entre abrir o checkout e clicar em finalizar
+  try {
+    const durationMs = Date.now() - checkoutStartRef.current;
+    finalizedRef.current = true;
+    trackCheckoutFinalize([...cartItems], finalTotal, durationMs);
+  } catch (e) {
+    console.error("Erro ao rastrear checkout_finalize:", e);
+  }
 
   try {
     const fullAddress = `${street}, ${number}${complement ? `, ${complement}` : ""} - ${neighborhood}, ${city} - ${state}`;

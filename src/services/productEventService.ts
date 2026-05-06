@@ -17,7 +17,9 @@ export type ProductEventType =
   | 'update_cart_quantity'
   | 'update_checkout_quantity'
   | 'visita_cardapio_nova'
-  | 'visita_cardapio_recorrente';
+  | 'visita_cardapio_recorrente'
+  | 'abandoned_cart'
+  | 'checkout_finalize';
 
 interface ProductEventPayload {
   product_id: string;
@@ -414,5 +416,122 @@ export const getAddToCartBreakdown = async (
     totalSessions: allSessions.size,
     totalEvents: data.length,
     byProduct,
+  };
+};
+
+// ---- Begin checkout: tempo médio até finalizar a compra ----
+
+const MAX_CHECKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutos
+
+export interface CheckoutDurationBreakdown {
+  /** Sessões que iniciaram checkout no período. */
+  totalCheckoutSessions: number;
+  /** Sessões que finalizaram (purchase ou checkout_finalize) com tempo válido (<=15min). */
+  completedSessions: number;
+  /** Sessões que iniciaram checkout mas não finalizaram (ou ultrapassaram 15min e/ou abandonaram). */
+  notCompletedSessions: number;
+  /** Sessões com abandoned_cart (>30min). */
+  abandonedSessions: number;
+  /** Sessões descartadas da média por excederem 15min entre begin_checkout e finalize. */
+  excludedOver15min: number;
+  /** Tempo médio em segundos entre begin_checkout e finalize, considerando apenas <=15min. */
+  avgDurationSec: number;
+  /** Mediana em segundos. */
+  medianDurationSec: number;
+  /** Menor duração considerada (segundos). */
+  minDurationSec: number;
+  /** Maior duração considerada (segundos). */
+  maxDurationSec: number;
+}
+
+export const getCheckoutDurationBreakdown = async (
+  startDate: string,
+  endDate: string
+): Promise<CheckoutDurationBreakdown> => {
+  const requestedStart = new Date(`${startDate}T00:00:00`).toISOString();
+  const startIso = requestedStart < FUNNEL_CUTOFF_ISO ? FUNNEL_CUTOFF_ISO : requestedStart;
+  const endIso = new Date(`${endDate}T23:59:59.999`).toISOString();
+
+  const { data, error } = await supabase
+    .from('product_events' as any)
+    .select('event_type, session_id, created_at')
+    .in('event_type', ['begin_checkout', 'checkout_finalize', 'purchase', 'abandoned_cart'])
+    .gte('created_at', startIso)
+    .lte('created_at', endIso);
+
+  if (error || !data) {
+    console.error('Error fetching checkout duration breakdown:', error);
+    return {
+      totalCheckoutSessions: 0,
+      completedSessions: 0,
+      notCompletedSessions: 0,
+      abandonedSessions: 0,
+      excludedOver15min: 0,
+      avgDurationSec: 0,
+      medianDurationSec: 0,
+      minDurationSec: 0,
+      maxDurationSec: 0,
+    };
+  }
+
+  // Agrega por sessão: primeiro begin_checkout, primeiro finalize/purchase, qualquer abandoned_cart
+  const sessions = new Map<string, { begin?: number; finalize?: number; abandoned?: boolean }>();
+
+  (data as any[]).forEach((row) => {
+    const sid = row.session_id;
+    if (!sid) return;
+    const ts = new Date(row.created_at).getTime();
+    const entry = sessions.get(sid) || {};
+
+    if (row.event_type === 'begin_checkout') {
+      entry.begin = entry.begin === undefined ? ts : Math.min(entry.begin, ts);
+    } else if (row.event_type === 'checkout_finalize' || row.event_type === 'purchase') {
+      entry.finalize = entry.finalize === undefined ? ts : Math.min(entry.finalize, ts);
+    } else if (row.event_type === 'abandoned_cart') {
+      entry.abandoned = true;
+    }
+    sessions.set(sid, entry);
+  });
+
+  const durationsMs: number[] = [];
+  let totalCheckout = 0;
+  let abandoned = 0;
+  let excluded = 0;
+  let completed = 0;
+
+  sessions.forEach((s) => {
+    if (s.begin === undefined) return;
+    totalCheckout += 1;
+    if (s.abandoned) abandoned += 1;
+
+    if (s.finalize !== undefined && s.finalize >= s.begin) {
+      const diff = s.finalize - s.begin;
+      if (diff <= MAX_CHECKOUT_DURATION_MS) {
+        durationsMs.push(diff);
+        completed += 1;
+      } else {
+        excluded += 1;
+      }
+    }
+  });
+
+  const sorted = [...durationsMs].sort((a, b) => a - b);
+  const avg = sorted.length ? sorted.reduce((a, b) => a + b, 0) / sorted.length : 0;
+  const median = sorted.length
+    ? sorted.length % 2
+      ? sorted[(sorted.length - 1) / 2]
+      : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
+    : 0;
+
+  return {
+    totalCheckoutSessions: totalCheckout,
+    completedSessions: completed,
+    notCompletedSessions: Math.max(totalCheckout - completed, 0),
+    abandonedSessions: abandoned,
+    excludedOver15min: excluded,
+    avgDurationSec: Math.round(avg / 1000),
+    medianDurationSec: Math.round(median / 1000),
+    minDurationSec: sorted.length ? Math.round(sorted[0] / 1000) : 0,
+    maxDurationSec: sorted.length ? Math.round(sorted[sorted.length - 1] / 1000) : 0,
   };
 };
