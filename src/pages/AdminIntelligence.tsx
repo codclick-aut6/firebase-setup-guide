@@ -1306,6 +1306,82 @@ const AdminGA4 = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={cartModalOpen} onOpenChange={setCartModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Detalhes dos Add ao Carrinho</DialogTitle>
+            <DialogDescription>
+              Período: {startDate} até {endDate}
+            </DialogDescription>
+          </DialogHeader>
+
+          {isCartBreakdownLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          ) : !cartBreakdown || cartBreakdown.totalEvents === 0 ? (
+            <p className="text-muted-foreground text-center py-8">Sem add ao carrinho no período.</p>
+          ) : (
+            <ScrollArea className="flex-1 pr-4">
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Valor Total</p>
+                      <p className="text-2xl font-bold" style={{ color: "hsl(142, 76%, 36%)" }}>
+                        {formatCurrency(cartBreakdown.totalValue)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Itens Adicionados</p>
+                      <p className="text-2xl font-bold">{cartBreakdown.totalQuantity.toLocaleString("pt-BR")}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Eventos</p>
+                      <p className="text-2xl font-bold">{cartBreakdown.totalEvents.toLocaleString("pt-BR")}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <p className="text-xs text-muted-foreground">Sessões</p>
+                      <p className="text-2xl font-bold">{cartBreakdown.totalSessions.toLocaleString("pt-BR")}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">Por produto</h4>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Produto</TableHead>
+                        <TableHead className="text-right">Qtd</TableHead>
+                        <TableHead className="text-right">Sessões</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {cartBreakdown.byProduct.map((r) => (
+                        <TableRow key={r.product_id}>
+                          <TableCell className="font-medium">{r.product_name}</TableCell>
+                          <TableCell className="text-right">{r.quantity.toLocaleString("pt-BR")}</TableCell>
+                          <TableCell className="text-right">{r.sessions.toLocaleString("pt-BR")}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(r.value)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
