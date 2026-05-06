@@ -57,8 +57,8 @@ export async function signUp(
           created_at: new Date().toISOString(),
           last_sign_in_at: new Date().toISOString(),
           role: "user",
-          utm_source: utms.utm_source || "direto",
-          utm_campaign: utms.utm_campaign || "direto",
+          first_utm_source: utms.utm_source || "direto",
+          first_utm_campaign: utms.utm_campaign || "direto",
         }, { onConflict: 'firebase_id' })
         .select()
         .single();
