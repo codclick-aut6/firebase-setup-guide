@@ -54,23 +54,18 @@
     /* Garantir scroll suave e adequado em dispositivos móveis */
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    overflow-x: hidden;
   }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
-    /* Permitir scroll vertical em dispositivos móveis */
-    overflow-x: hidden;
-    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    /* Adicionar padding inferior para garantir espaço para scroll */
+    /* Adicionar padding inferior para garantir espaco para scroll */
     padding-bottom: 120px;
   }
   
   /* Garantir que containers principais permitam scroll */
   #root {
     min-height: 100vh;
-    overflow-x: hidden;
   }
 }
 

@@ -501,6 +501,7 @@ export const EditMenuItemModal = ({
             variations={variations}
             variationGroups={variationGroups}
             pizzaBorders={pizzaBorders}
+            menuItems={menuItems}
             onDataChange={onSuccess}
           />
 
@@ -525,6 +526,7 @@ const VariationGroupsSectionWithPrices = ({
   variations,
   variationGroups,
   pizzaBorders = [],
+  menuItems = [],
   onDataChange,
 }: {
   editItem: MenuItem;
@@ -532,6 +534,7 @@ const VariationGroupsSectionWithPrices = ({
   variations: Variation[];
   variationGroups: VariationGroup[];
   pizzaBorders?: PizzaBorder[];
+  menuItems?: MenuItem[];
   onDataChange?: () => void;
 }) => {
   return (
@@ -541,6 +544,7 @@ const VariationGroupsSectionWithPrices = ({
       variations={variations}
       variationGroups={variationGroups}
       pizzaBorders={pizzaBorders}
+      menuItems={menuItems}
       onDataChange={onDataChange}
     />
   );

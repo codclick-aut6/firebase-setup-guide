@@ -15,6 +15,7 @@ interface VariationGroupsSectionProps {
   variationGroups: VariationGroup[];
   pizzaBorders?: PizzaBorder[];
   onDataChange?: () => void;
+  menuItems?: MenuItem[];
 }
 
 type SectionItem =
@@ -28,6 +29,7 @@ export const VariationGroupsSection = ({
   variationGroups,
   pizzaBorders = [],
   onDataChange,
+  menuItems = [],
 }: VariationGroupsSectionProps) => {
   const [tempVariationGroup, setTempVariationGroup] = useState<VariationGroup | null>(null);
 
@@ -147,12 +149,17 @@ export const VariationGroupsSection = ({
 
   const getVariationName = (variationId: string): string => {
     const variation = variations.find(v => v.id === variationId);
-    return variation ? variation.name : "Variação não encontrada";
+    if (variation) return variation.name;
+    const menuItem = menuItems.find(m => m.id === variationId);
+    if (menuItem) return menuItem.name;
+    return "Variação não encontrada";
   };
 
   const getVariationPrice = (variationId: string): number => {
     const variation = variations.find(v => v.id === variationId);
-    return variation?.additionalPrice || 0;
+    if (variation) return variation.additionalPrice || 0;
+    const menuItem = menuItems.find(m => m.id === variationId);
+    return menuItem?.price || 0;
   };
 
   return (

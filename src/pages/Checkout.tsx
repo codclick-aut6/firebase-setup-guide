@@ -38,6 +38,7 @@ import { getUtmParams } from "@/utils/utmCapture";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { phoneDigits as toPhoneDigits } from "@/utils/phoneUtils";
 import { withComunicacaoMeta } from "@/utils/webhookPayload";
+import CouponField from "@/components/CouponField";
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart, removeFromCart, updateCartItemByIndex, appliedCoupon, discountAmount, finalTotal } = useCart();
@@ -97,22 +98,38 @@ const Checkout = () => {
   const abandonedFiredRef = useRef<boolean>(false);
   const finalizedRef = useRef<boolean>(false);
 
-  // Dispara "abandoned_cart" se o usuário ficar mais de 30 minutos no checkout sem finalizar
+  // Dispara "abandoned_cart" após o tempo configurado em "tempo_disparo_abandoned_cart" (minutos). Padrão: 25 min
+  const [abandonMs, setAbandonMs] = useState<number>(25 * 60 * 1000);
   useEffect(() => {
-    const ABANDON_MS = 30 * 60 * 1000;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("configuracoes")
+          .select("valor")
+          .eq("chave", "tempo_disparo_abandoned_cart")
+          .maybeSingle();
+        const minutes = parseFloat(data?.valor || "");
+        if (!isNaN(minutes) && minutes > 0) setAbandonMs(minutes * 60 * 1000);
+      } catch {}
+    })();
+  }, []);
+  useEffect(() => {
     const timer = window.setTimeout(() => {
       if (finalizedRef.current || abandonedFiredRef.current) return;
       if (cartItems.length === 0) return;
       abandonedFiredRef.current = true;
       try {
         trackAbandonedCart([...cartItems], finalTotal);
+        import("@/utils/abandonedCartWebhook").then(({ fireAbandonedCartWebhook }) => {
+          fireAbandonedCartWebhook(currentUser);
+        });
       } catch (e) {
         console.error("Erro ao disparar abandoned_cart:", e);
       }
-    }, ABANDON_MS);
+    }, abandonMs);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [abandonMs]);
 
   // Preencher dados automaticamente se o usuário estiver logado
   useEffect(() => {
@@ -643,6 +660,7 @@ const proceedWithOrder = async () => {
     });
 
     navigate("/");
+    window.scrollTo({ top: 0, behavior: "auto" });
   } catch (error) {
     console.error("Erro ao criar pedido:", error);
     toast({
@@ -1207,7 +1225,11 @@ const proceedWithOrder = async () => {
               ))}
               
               <Separator />
-              
+
+              <CouponField />
+
+              <Separator />
+
               <div className="space-y-2">
                 <div className="flex justify-between text-md">
                   <span>Subtotal:</span>

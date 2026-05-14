@@ -46,7 +46,6 @@ export async function signUp(
 
     // Salva usuário no Supabase com role "user"
     try {
-      const utms = getUtmParams();
       const { data, error: supabaseError } = await supabase
         .from('users')
         .upsert({
@@ -57,8 +56,6 @@ export async function signUp(
           created_at: new Date().toISOString(),
           last_sign_in_at: new Date().toISOString(),
           role: "user",
-          first_utm_source: utms.utm_source || "direto",
-          first_utm_campaign: utms.utm_campaign || "direto",
         }, { onConflict: 'firebase_id' })
         .select()
         .single();

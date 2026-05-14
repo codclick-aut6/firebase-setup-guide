@@ -158,7 +158,7 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-full overflow-x-hidden">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-full">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
           <h1 className="text-xl sm:text-2xl font-bold leading-tight">
             Gerenciamento do Cardápio
@@ -197,13 +197,15 @@ const Admin = () => {
         )}
 
         <Tabs defaultValue="menu" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 mb-4 h-auto p-1">
-            <TabsTrigger value="categories" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Categorias</TabsTrigger>
-            <TabsTrigger value="menu" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Itens</TabsTrigger>            
-            <TabsTrigger value="variations" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Variações</TabsTrigger>
-            <TabsTrigger value="groups" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Grupos</TabsTrigger>
-            <TabsTrigger value="borders" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Bordas</TabsTrigger>
-          </TabsList>
+          <div className="sticky top-0 z-30 bg-background pb-2">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 mb-4 h-auto p-1">
+              <TabsTrigger value="categories" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Categorias</TabsTrigger>
+              <TabsTrigger value="menu" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Itens</TabsTrigger>            
+              <TabsTrigger value="variations" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Variações</TabsTrigger>
+              <TabsTrigger value="groups" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Grupos</TabsTrigger>
+              <TabsTrigger value="borders" className="text-xs sm:text-sm px-2 py-2 data-[state=active]:bg-white">Bordas</TabsTrigger>
+            </TabsList>
+          </div>
 
           <div className="w-full overflow-x-hidden">
             <TabsContent value="menu" className="mt-0">
@@ -231,6 +233,9 @@ const Admin = () => {
               <VariationsTab 
                 variations={variations}
                 categories={categories}
+                menuItems={menuItems}
+                variationGroups={variationGroups}
+                pizzaBorders={pizzaBorders}
                 loading={loading}
                 onDataChange={loadData}
               />
@@ -240,6 +245,7 @@ const Admin = () => {
               <VariationGroupsTab 
                 variationGroups={variationGroups}
                 variations={variations}
+                menuItems={menuItems}
                 loading={loading}
                 onDataChange={loadData}
               />

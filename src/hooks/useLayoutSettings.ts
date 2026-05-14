@@ -26,12 +26,12 @@ export interface LayoutSettings {
 }
 
 const defaults: LayoutSettings = {
-  empresa_nome: 'Preciosa Fragrância',
-  empresa_descricao: 'Perfumes Importados 100% ORIGINAIS',
-  empresa_logo_url: 'https://aealgiyzbenbhhftwkxb.supabase.co/storage/v1/object/public/imagens-cardapio/precioso_frasco.webp',
-  empresa_banner_url: 'https://aealgiyzbenbhhftwkxb.supabase.co/storage/v1/object/public/imagens-cardapio/bk-imports.webp',
-  empresa_banner_mobile_url: '',
-  usar_mesma_imagem_mobile: 'true',
+  empresa_nome: 'ClickPrato',
+  empresa_descricao: 'Cardápio Digital Inteligente',
+  empresa_logo_url: 'https://bmhxnlxcgseemmfacuqi.supabase.co/storage/v1/object/public/imagens_clickprato/logo_clickprato_preto.png',
+  empresa_banner_url: 'https://bmhxnlxcgseemmfacuqi.supabase.co/storage/v1/object/public/imagens_clickprato/banner_clickprato2.png',
+  empresa_banner_mobile_url: 'https://bmhxnlxcgseemmfacuqi.supabase.co/storage/v1/object/public/imagens_clickprato/banner4.png',
+  usar_mesma_imagem_mobile: 'false',
   cor_primaria: '#ff6600',
   cor_secundaria: '#ff9933',
   cor_fonte: '#1f2937',

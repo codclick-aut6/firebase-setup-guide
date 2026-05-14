@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Clock, RefreshCw, MessageCircle, Bell, ShieldCheck, Radio } from "lucide-react";
+import { ArrowLeft, Clock, RefreshCw, MessageCircle, Bell, ShieldCheck, Radio, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { invalidateComunicacaoMetaCache } from "@/utils/webhookPayload";
 
@@ -18,10 +18,13 @@ const Configuracoes = () => {
   const [savingChat, setSavingChat] = useState(false);
   const [savingWebhookStatus, setSavingWebhookStatus] = useState(false);
   const [savingWebhookAuth, setSavingWebhookAuth] = useState(false);
+  const [savingWebhookEventos, setSavingWebhookEventos] = useState(false);
   const [cronSchedule, setCronSchedule] = useState("0 9 * * *");
   const [webhookChat, setWebhookChat] = useState("");
   const [webhookStatus, setWebhookStatus] = useState("");
   const [webhookAuth, setWebhookAuth] = useState("");
+  const [webhookEventos, setWebhookEventos] = useState("");
+  const [tempoAbandonedCart, setTempoAbandonedCart] = useState("25");
   const [whatsappVerificationEnabled, setWhatsappVerificationEnabled] = useState(true);
   const [savingWhatsappToggle, setSavingWhatsappToggle] = useState(false);
   const [mensagemAtendimento, setMensagemAtendimento] = useState("");
@@ -40,7 +43,7 @@ const Configuracoes = () => {
       const { data, error } = await supabase
         .from("configuracoes")
         .select("chave, valor")
-        .in("chave", ["cron_ga4_schedule", "webhook_chatassistant", "mensagem_atendimento", "webhook_status_pedido", "webhook_autenticacao", "whatsapp_verification_enabled", "comunicacao_instancia", "comunicacao_apikey"]);
+        .in("chave", ["cron_ga4_schedule", "webhook_chatassistant", "mensagem_atendimento", "webhook_status_pedido", "webhook_autenticacao", "webhook_eventos", "tempo_disparo_abandoned_cart", "whatsapp_verification_enabled", "comunicacao_instancia", "comunicacao_apikey"]);
 
       if (error) throw error;
 
@@ -50,6 +53,8 @@ const Configuracoes = () => {
           if (row.chave === "webhook_chatassistant" && row.valor) setWebhookChat(row.valor);
           if (row.chave === "webhook_status_pedido" && row.valor) setWebhookStatus(row.valor);
           if (row.chave === "webhook_autenticacao" && row.valor) setWebhookAuth(row.valor);
+          if (row.chave === "webhook_eventos" && row.valor) setWebhookEventos(row.valor);
+          if (row.chave === "tempo_disparo_abandoned_cart" && row.valor) setTempoAbandonedCart(row.valor);
           if (row.chave === "mensagem_atendimento" && row.valor) setMensagemAtendimento(row.valor);
           if (row.chave === "whatsapp_verification_enabled") setWhatsappVerificationEnabled(row.valor !== "false");
           if (row.chave === "comunicacao_instancia" && row.valor) setComunicacaoInstancia(row.valor);
@@ -346,6 +351,76 @@ const Configuracoes = () => {
               }}>
                 <RefreshCw className={`h-4 w-4 mr-2 ${savingWebhookAuth ? "animate-spin" : ""}`} />
                 {savingWebhookAuth ? "Salvando..." : "Salvar Webhook de Autenticação"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Webhook Eventos */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Activity className="h-6 w-6 text-primary" />
+              <div>
+                <CardTitle>Webhook Eventos</CardTitle>
+                <CardDescription>URL acionada quando ocorre o evento <code>abandoned_cart</code>. O payload inclui todos os eventos da sessão e os dados do usuário logado.</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="webhook_eventos">URL do Webhook</Label>
+                <Input
+                  id="webhook_eventos"
+                  value={webhookEventos}
+                  onChange={(e) => setWebhookEventos(e.target.value)}
+                  placeholder="https://seu-webhook.com/eventos"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Disparado automaticamente quando um carrinho é abandonado (após o tempo configurado abaixo no checkout sem finalizar).
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tempo_disparo_abandoned_cart">Tempo disparo abandoned_cart (minutos)</Label>
+                <Input
+                  id="tempo_disparo_abandoned_cart"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={tempoAbandonedCart}
+                  onChange={(e) => setTempoAbandonedCart(e.target.value)}
+                  placeholder="25"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Quantos minutos o usuário precisa permanecer no checkout sem finalizar para disparar o evento. Padrão: 25 minutos.
+                </p>
+              </div>
+              <Button className="w-full" disabled={savingWebhookEventos} onClick={async () => {
+                setSavingWebhookEventos(true);
+                try {
+                  const minutes = parseFloat(tempoAbandonedCart);
+                  if (isNaN(minutes) || minutes <= 0) {
+                    throw new Error("Informe um tempo válido em minutos (maior que 0).");
+                  }
+                  for (const { chave, valor } of [
+                    { chave: "webhook_eventos", valor: webhookEventos },
+                    { chave: "tempo_disparo_abandoned_cart", valor: String(minutes) },
+                  ]) {
+                    const { error } = await supabase
+                      .from("configuracoes")
+                      .upsert({ chave, valor, updated_at: new Date().toISOString() }, { onConflict: "chave" });
+                    if (error) throw error;
+                  }
+                  toast({ title: "Sucesso!", description: "Webhook de eventos salvo." });
+                } catch (error: any) {
+                  toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+                } finally {
+                  setSavingWebhookEventos(false);
+                }
+              }}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${savingWebhookEventos ? "animate-spin" : ""}`} />
+                {savingWebhookEventos ? "Salvando..." : "Salvar Webhook de Eventos"}
               </Button>
             </div>
           </CardContent>

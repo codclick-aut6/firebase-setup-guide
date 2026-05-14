@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { VariationGroup, Variation } from "@/types/menu";
+import { VariationGroup, Variation, MenuItem } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -10,6 +10,7 @@ import { EditVariationGroupModal } from "./EditVariationGroupModal";
 interface VariationGroupsTabProps {
   variationGroups: VariationGroup[];
   variations: Variation[];
+  menuItems: MenuItem[];
   loading: boolean;
   onDataChange: () => void;
 }
@@ -17,6 +18,7 @@ interface VariationGroupsTabProps {
 export const VariationGroupsTab = ({
   variationGroups,
   variations,
+  menuItems,
   loading,
   onDataChange,
 }: VariationGroupsTabProps) => {
@@ -122,7 +124,10 @@ export const VariationGroupsTab = ({
 
   const getVariationName = (variationId: string): string => {
     const variation = variations.find(v => v.id === variationId);
-    return variation ? variation.name : "Variação não encontrada";
+    if (variation) return variation.name;
+    const menuItem = menuItems.find(m => m.id === variationId);
+    if (menuItem) return menuItem.name;
+    return "Variação não encontrada";
   };
 
   return (
@@ -246,6 +251,7 @@ export const VariationGroupsTab = ({
           editVariationGroup={editVariationGroup}
           setEditVariationGroup={setEditVariationGroup}
           variations={variations}
+          menuItems={menuItems}
           variationGroups={cleanVariationGroups.groups}
           onSuccess={onDataChange}
         />

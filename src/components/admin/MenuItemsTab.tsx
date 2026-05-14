@@ -2,7 +2,8 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { MenuItem, Category, VariationGroup, PizzaBorder, POPULAR_CATEGORY_ID } from "@/types/menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle, RefreshCw, Copy, Grid3X3, List } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Edit, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle, RefreshCw, Copy, Grid3X3, List, Search, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { deleteMenuItem, cleanupPopularItems } from "@/services/menuItemService";
 import { EditMenuItemModal } from "./EditMenuItemModal";
@@ -32,6 +33,7 @@ export const MenuItemsTab = ({
   const [deletingItems, setDeletingItems] = useState<Set<string>>(new Set());
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [viewMode, setViewMode] = useState<"cards" | "list">("cards");
+  const [searchTerm, setSearchTerm] = useState("");
   const savedScrollRef = useRef<number | null>(null);
 
   // Restaurar scroll quando o modal fecha (após salvar ou cancelar)
@@ -108,7 +110,16 @@ export const MenuItemsTab = ({
       };
     });
     
-    menuItems.forEach(item => {
+    // Apply search filter
+    const lowerSearch = searchTerm.trim().toLowerCase();
+    const filteredItems = lowerSearch
+      ? menuItems.filter(item =>
+          item.name.toLowerCase().includes(lowerSearch) ||
+          (item.description || "").toLowerCase().includes(lowerSearch)
+        )
+      : menuItems;
+    
+    filteredItems.forEach(item => {
       const targetCategoryIds = new Set<string>();
       if (item.category) targetCategoryIds.add(item.category);
       (item.additionalCategories || []).forEach(id => targetCategoryIds.add(id));
@@ -136,12 +147,14 @@ export const MenuItemsTab = ({
     // Popular fixed category: aggregate all items marked as popular
     sortedCategories.forEach(category => {
       if (category.id === POPULAR_CATEGORY_ID || category.isPopularCategory) {
-        grouped[category.id].items = menuItems.filter(item => item.popular === true);
+        grouped[category.id].items = filteredItems.filter(item => item.popular === true);
       }
     });
     
-    return Object.values(grouped);
-  }, [menuItems, categories]);
+    // Filter out empty categories when searching
+    const result = Object.values(grouped);
+    return lowerSearch ? result.filter(g => g.items.length > 0) : result;
+  }, [menuItems, categories, searchTerm]);
 
   const handleAddItem = () => {
     savedScrollRef.current = window.scrollY;
@@ -260,62 +273,96 @@ export const MenuItemsTab = ({
     }
   };
 
+  // Total items after filtering
+  const filteredItemsCount = useMemo(() => {
+    if (!searchTerm.trim()) return menuItems.length;
+    const lowerSearch = searchTerm.trim().toLowerCase();
+    return menuItems.filter(item =>
+      item.name.toLowerCase().includes(lowerSearch) ||
+      (item.description || "").toLowerCase().includes(lowerSearch)
+    ).length;
+  }, [menuItems, searchTerm]);
+
   if (loading) {
     return <div className="text-center py-8">Carregando...</div>;
   }
 
   return (
     <>
-<div className="mb-4">
-  <h2 className="text-xl font-bold mb-2">
-    Itens do Cardápio ({menuItems.length} itens)
-    {duplicateIds.length > 0 && (
-      <span className="ml-2 text-red-500 text-sm">
-        ({duplicateIds.length} {duplicateIds.length === 1 ? 'duplicata detectada' : 'duplicatas detectadas'})
-      </span>
-    )}
-  </h2>
+      <div className="mb-4">
+        <h2 className="text-xl font-bold mb-2">
+          Itens do Cardápio ({filteredItemsCount} {filteredItemsCount === 1 ? "item" : "itens"})
+          {duplicateIds.length > 0 && (
+            <span className="ml-2 text-red-500 text-sm">
+              ({duplicateIds.length} {duplicateIds.length === 1 ? 'duplicata detectada' : 'duplicatas detectadas'})
+            </span>
+          )}
+        </h2>
 
-  <div className="flex gap-2">
-    <div className="flex border rounded-md overflow-hidden">
-      <Button
-        size="sm"
-        variant={viewMode === "cards" ? "default" : "ghost"}
-        onClick={() => setViewMode("cards")}
-        className="rounded-none px-2"
-      >
-        <Grid3X3 className="h-4 w-4" />
-      </Button>
-      <Button
-        size="sm"
-        variant={viewMode === "list" ? "default" : "ghost"}
-        onClick={() => setViewMode("list")}
-        className="rounded-none px-2"
-      >
-        <List className="h-4 w-4" />
-      </Button>
-    </div>
-    <Button 
-      onClick={handleCleanupPopularItems}
-      variant="outline"
-      disabled={isCleaningUp}
-      className="flex items-center gap-2"
-    >
-      <RefreshCw className={`h-4 w-4 ${isCleaningUp ? 'animate-spin' : ''}`} />
-      {isCleaningUp ? 'Limpando...' : 'Limpar Populares'}
-    </Button>
-    <Button onClick={handleAddItem}>
-      <Plus className="h-4 w-4 mr-1" />
-      Novo Item
-    </Button>
-  </div>
-</div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar item por nome ou descrição..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 pr-9 w-full"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <div className="flex border rounded-md overflow-hidden">
+              <Button
+                size="sm"
+                variant={viewMode === "cards" ? "default" : "ghost"}
+                onClick={() => setViewMode("cards")}
+                className="rounded-none px-2"
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant={viewMode === "list" ? "default" : "ghost"}
+                onClick={() => setViewMode("list")}
+                className="rounded-none px-2"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button 
+              onClick={handleCleanupPopularItems}
+              variant="outline"
+              disabled={isCleaningUp}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isCleaningUp ? 'animate-spin' : ''}`} />
+              {isCleaningUp ? 'Limpando...' : 'Limpar Populares'}
+            </Button>
+            <Button onClick={handleAddItem}>
+              <Plus className="h-4 w-4 mr-1" />
+              Novo Item
+            </Button>
+          </div>
+        </div>
+      </div>
       
 
       {menuItems.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           <p>Nenhum item encontrado.</p>
           <p className="mt-2">Adicione itens ou importe os dados iniciais na aba "Categorias".</p>
+        </div>
+      ) : filteredItemsCount === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <p>Nenhum item encontrado para "{searchTerm}".</p>
+          <p className="mt-2">Tente outro termo de busca.</p>
         </div>
       ) : (
         <div className="space-y-8">

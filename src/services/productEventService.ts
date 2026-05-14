@@ -535,3 +535,267 @@ export const getCheckoutDurationBreakdown = async (
     maxDurationSec: sorted.length ? Math.round(sorted[sorted.length - 1] / 1000) : 0,
   };
 };
+
+// ---- Ticket médio: real (purchases efetivadas) vs carrinhos abandonados ----
+
+export interface AbandonedTicketBreakdown {
+  /** Ticket médio de pedidos efetivamente concluídos (pedidos_sabor_delivery, exclui cancelados). */
+  avgRealTicket: number;
+  /** Ticket médio dos carrinhos abandonados (>30min sem finalizar). */
+  avgAbandonedTicket: number;
+  /** Quantidade de carrinhos abandonados no período. */
+  abandonedCount: number;
+  /** Receita potencial perdida = avgAbandonedTicket * abandonedCount. */
+  lostRevenue: number;
+}
+
+export const getAbandonedTicketBreakdown = async (
+  startDate: string,
+  endDate: string
+): Promise<AbandonedTicketBreakdown> => {
+  const requestedStart = new Date(`${startDate}T00:00:00`).toISOString();
+  const startIso = requestedStart < FUNNEL_CUTOFF_ISO ? FUNNEL_CUTOFF_ISO : requestedStart;
+  const endIso = new Date(`${endDate}T23:59:59.999`).toISOString();
+
+  // Real ticket: pedidos efetivados
+  const { data: pedidos } = await supabase
+    .from('pedidos_sabor_delivery')
+    .select('valor_total, status_atual, criado_em')
+    .gte('criado_em', startIso)
+    .lte('criado_em', endIso);
+
+  const validPedidos = (pedidos || []).filter((p: any) => {
+    const s = (p.status_atual || '').toLowerCase();
+    return s !== 'cancelado' && s !== 'cancelled' && Number(p.valor_total) > 0;
+  });
+  const avgRealTicket = validPedidos.length
+    ? validPedidos.reduce((sum: number, p: any) => sum + Number(p.valor_total), 0) / validPedidos.length
+    : 0;
+
+  // Abandoned ticket: somar price*qty por sessão de abandoned_cart
+  const { data: abandoned } = await supabase
+    .from('product_events' as any)
+    .select('session_id, price, quantity')
+    .eq('event_type', 'abandoned_cart')
+    .gte('created_at', startIso)
+    .lte('created_at', endIso);
+
+  const sessionTotals = new Map<string, number>();
+  (abandoned as any[] || []).forEach((row) => {
+    const sid = row.session_id;
+    if (!sid) return;
+    const v = Number(row.price ?? 0) * Number(row.quantity ?? 1);
+    sessionTotals.set(sid, (sessionTotals.get(sid) || 0) + v);
+  });
+
+  const abandonedTotals = Array.from(sessionTotals.values()).filter(v => v > 0);
+  const avgAbandonedTicket = abandonedTotals.length
+    ? abandonedTotals.reduce((a, b) => a + b, 0) / abandonedTotals.length
+    : 0;
+  const abandonedCount = abandonedTotals.length;
+  const lostRevenue = avgAbandonedTicket * abandonedCount;
+
+  return { avgRealTicket, avgAbandonedTicket, abandonedCount, lostRevenue };
+};
+
+// ---- Compras efetivadas (etapa 5 do funil) ----
+
+export interface PurchasesBreakdown {
+  totalRevenue: number;
+  totalOrders: number;
+  avgTicket: number;
+  byPaymentMethod: Array<{ method: string; count: number; revenue: number; pct: number }>;
+  topHours: Array<{ hour: number; orders: number; revenue: number }>;
+  topDays: Array<{ dayOfWeek: number; label: string; orders: number; revenue: number }>;
+}
+
+const PAYMENT_LABELS: Record<string, string> = {
+  card: 'Cartão',
+  credit: 'Crédito',
+  debit: 'Débito',
+  pix: 'PIX',
+  cash: 'Dinheiro',
+  money: 'Dinheiro',
+};
+
+const DAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+export const getPurchasesBreakdown = async (
+  startDate: string,
+  endDate: string
+): Promise<PurchasesBreakdown> => {
+  const startIso = new Date(`${startDate}T00:00:00`).toISOString();
+  const endIso = new Date(`${endDate}T23:59:59.999`).toISOString();
+
+  const { data, error } = await supabase
+    .from('pedidos_sabor_delivery')
+    .select('valor_total, status_atual, metodo_pagamento, criado_em')
+    .gte('criado_em', startIso)
+    .lte('criado_em', endIso);
+
+  if (error || !data) {
+    return {
+      totalRevenue: 0, totalOrders: 0, avgTicket: 0,
+      byPaymentMethod: [], topHours: [], topDays: [],
+    };
+  }
+
+  const valid = (data as any[]).filter((p) => {
+    const s = (p.status_atual || '').toLowerCase();
+    return s !== 'cancelado' && s !== 'cancelled' && Number(p.valor_total) > 0;
+  });
+
+  const totalRevenue = valid.reduce((s, p) => s + Number(p.valor_total), 0);
+  const totalOrders = valid.length;
+  const avgTicket = totalOrders ? totalRevenue / totalOrders : 0;
+
+  // Payment methods
+  const payMap = new Map<string, { count: number; revenue: number }>();
+  valid.forEach((p) => {
+    const raw = (p.metodo_pagamento || 'não informado').toString().toLowerCase();
+    const label = PAYMENT_LABELS[raw] || raw;
+    const e = payMap.get(label) || { count: 0, revenue: 0 };
+    e.count += 1;
+    e.revenue += Number(p.valor_total);
+    payMap.set(label, e);
+  });
+  const byPaymentMethod = Array.from(payMap.entries())
+    .map(([method, v]) => ({
+      method,
+      count: v.count,
+      revenue: v.revenue,
+      pct: totalOrders ? (v.count / totalOrders) * 100 : 0,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  // Hours
+  const hourMap = new Map<number, { orders: number; revenue: number }>();
+  const dayMap = new Map<number, { orders: number; revenue: number }>();
+  valid.forEach((p) => {
+    const d = new Date(p.criado_em);
+    const h = d.getHours();
+    const dow = d.getDay();
+    const he = hourMap.get(h) || { orders: 0, revenue: 0 };
+    he.orders += 1; he.revenue += Number(p.valor_total);
+    hourMap.set(h, he);
+    const de = dayMap.get(dow) || { orders: 0, revenue: 0 };
+    de.orders += 1; de.revenue += Number(p.valor_total);
+    dayMap.set(dow, de);
+  });
+
+  const topHours = Array.from(hourMap.entries())
+    .map(([hour, v]) => ({ hour, ...v }))
+    .sort((a, b) => b.orders - a.orders)
+    .slice(0, 3);
+
+  const topDays = Array.from(dayMap.entries())
+    .map(([dayOfWeek, v]) => ({ dayOfWeek, label: DAY_NAMES[dayOfWeek], ...v }))
+    .sort((a, b) => b.orders - a.orders)
+    .slice(0, 3);
+
+  return { totalRevenue, totalOrders, avgTicket, byPaymentMethod, topHours, topDays };
+};
+
+// ---- Product views (Etapa 2): top categorias, top produtos, vitrine, lista completa ----
+
+export interface ProductViewRow {
+  product_id: string;
+  product_name: string;
+  category: string | null;
+  views: number;
+  addToCart: number;
+  conversion: number; // 0..100
+}
+
+export interface CategoryViewRow {
+  category: string;
+  views: number;
+}
+
+export interface ProductViewsBreakdown {
+  totalViews: number;
+  totalAddToCart: number;
+  uniqueProducts: number;
+  topCategories: CategoryViewRow[]; // top 3
+  topProducts: ProductViewRow[]; // top 5 by views
+  showcase: ProductViewRow[]; // top 3 mais vistos com conversão < 40%
+  fullList: ProductViewRow[]; // todos, ordenado por views desc
+}
+
+const SHOWCASE_CONVERSION_THRESHOLD = 40;
+const SHOWCASE_MIN_VIEWS = 5;
+
+export const getProductViewsBreakdown = async (
+  startDate: string,
+  endDate: string
+): Promise<ProductViewsBreakdown> => {
+  const requestedStart = new Date(`${startDate}T00:00:00`).toISOString();
+  const startIso = requestedStart < FUNNEL_CUTOFF_ISO ? FUNNEL_CUTOFF_ISO : requestedStart;
+  const endIso = new Date(`${endDate}T23:59:59.999`).toISOString();
+
+  const { data, error } = await supabase
+    .from('product_events' as any)
+    .select('product_id, product_name, category, event_type, session_id')
+    .in('event_type', ['view_item', 'add_to_cart'])
+    .gte('created_at', startIso)
+    .lte('created_at', endIso);
+
+  if (error || !data) {
+    console.error('Error fetching product views breakdown:', error);
+    return { totalViews: 0, totalAddToCart: 0, uniqueProducts: 0, topCategories: [], topProducts: [], showcase: [], fullList: [] };
+  }
+
+  const productMap = new Map<string, { name: string; category: string | null; views: number; addToCart: number }>();
+  const categoryMap = new Map<string, number>();
+  let totalViews = 0;
+  let totalAddToCart = 0;
+
+  (data as any[]).forEach((row) => {
+    const id = row.product_id;
+    const existing = productMap.get(id) || { name: row.product_name, category: row.category ?? null, views: 0, addToCart: 0 };
+    if (row.category && !existing.category) existing.category = row.category;
+    if (row.event_type === 'view_item') {
+      existing.views++;
+      totalViews++;
+      const cat = row.category || NOT_SET_LABEL;
+      categoryMap.set(cat, (categoryMap.get(cat) || 0) + 1);
+    } else if (row.event_type === 'add_to_cart') {
+      existing.addToCart++;
+      totalAddToCart++;
+    }
+    productMap.set(id, existing);
+  });
+
+  const fullList: ProductViewRow[] = Array.from(productMap.entries())
+    .filter(([, v]) => v.views > 0)
+    .map(([product_id, v]) => ({
+      product_id,
+      product_name: v.name,
+      category: v.category,
+      views: v.views,
+      addToCart: v.addToCart,
+      conversion: v.views > 0 ? (v.addToCart / v.views) * 100 : 0,
+    }))
+    .sort((a, b) => b.views - a.views);
+
+  const topCategories: CategoryViewRow[] = Array.from(categoryMap.entries())
+    .map(([category, views]) => ({ category, views }))
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 3);
+
+  const topProducts = fullList.slice(0, 5);
+
+  const showcase = fullList
+    .filter((p) => p.views >= SHOWCASE_MIN_VIEWS && p.conversion < SHOWCASE_CONVERSION_THRESHOLD)
+    .slice(0, 3);
+
+  return {
+    totalViews,
+    totalAddToCart,
+    uniqueProducts: fullList.length,
+    topCategories,
+    topProducts,
+    showcase,
+    fullList,
+  };
+};

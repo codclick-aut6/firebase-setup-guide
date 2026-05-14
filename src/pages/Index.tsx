@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { trackViewItemList, trackMenuVisit } from "@/utils/trackingEvents";
 import { useLayoutSettings } from "@/hooks/useLayoutSettings";
+import { useActiveOrdersCount } from "@/hooks/useActiveOrdersCount";
 
 const Index = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -25,6 +26,7 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { settings } = useLayoutSettings();
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const activeOrdersCount = useActiveOrdersCount();
   const itemRefs = useRef<Record<string, { triggerClick: () => void } | null>>({});
   const deepLinkHandled = useRef(false);
   const menuVisitTracked = useRef(false);
@@ -91,7 +93,16 @@ const Index = () => {
             <div className="flex flex-col items-center md:items-end gap-1.5 md:gap-2">
               <div className="flex flex-row items-center gap-1.5 md:gap-2">
                 <Button variant="outline" onClick={() => setIsChatOpen(true)} className="px-1.5 text-[10px] md:text-sm h-9" style={{ backgroundColor: settings.cor_botoes, color: settings.cor_fonte_botoes }}><MessageCircle className="h-3 w-3" /> Fale Conosco</Button>
-                {currentUser && <Button variant="outline" onClick={() => navigate("/meus-pedidos")} className="px-1.5 text-[10px] md:text-sm h-9" style={{ backgroundColor: settings.cor_botoes, color: settings.cor_fonte_botoes }}><ClipboardList className="h-3 w-3" /> Pedidos</Button>}
+                {currentUser && (
+                  <div className="relative">
+                    <Button variant="outline" onClick={() => navigate("/meus-pedidos")} className="px-1.5 text-[10px] md:text-sm h-9" style={{ backgroundColor: settings.cor_botoes, color: settings.cor_fonte_botoes }}><ClipboardList className="h-3 w-3" />Meus Pedidos</Button>
+                    {activeOrdersCount > 0 && (
+                      <span className="absolute -top-2 -right-2 min-w-[20px] h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center shadow-md ring-2 ring-white">
+                        {activeOrdersCount}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <Button variant="outline" onClick={currentUser ? () => logOut() : () => navigate("/login")} className="px-1.5 text-[10px] md:text-sm h-9" style={{ backgroundColor: settings.cor_botoes, color: settings.cor_fonte_botoes }}>{currentUser ? <LogOut className="h-3 w-3" /> : <LogIn className="h-3 w-3" />} {currentUser ? "Sair" : "Entrar"}</Button>
               </div>
               {/* RESTAURADO: E-mail do usuário aparece abaixo dos botões se estiver logado */}
@@ -105,27 +116,40 @@ const Index = () => {
         />
       </div>
 
-      <div className="flex flex-col">
-        <div className="order-1 md:order-2 px-4 z-10 -mt-4 md:mt-8">
-          <div className="relative max-w-xl mx-auto">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/60" />
-            <Input
-              type="text"
-              placeholder="Busque pizza ou ingrediente..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-10 h-12 text-xs border-2 border-muted bg-card shadow-md rounded-xl focus-visible:ring-primary"
-            />
-            {searchTerm && <X onClick={() => setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground cursor-pointer" />}
-          </div>
-        </div>
-
-        <div className="order-2 md:order-1 mt-2 md:mt-0">
-          <CategoryNav 
-            categories={categories} 
-            activeCategory={activeCategory}
-            onSelectCategory={(id) => setActiveCategory(id)}
+      {/* Busca - aparece antes da nav no mobile, depois no desktop */}
+      <div className="order-1 md:order-3 px-4 z-10 -mt-4 md:mt-8 flex md:hidden">
+        <div className="relative max-w-xl mx-auto w-full">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/60" />
+          <Input
+            type="text"
+            placeholder="Busque pizza ou ingrediente..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 pr-10 h-12 text-xs border-2 border-muted bg-card shadow-md rounded-xl focus-visible:ring-primary"
           />
+          {searchTerm && <X onClick={() => setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground cursor-pointer" />}
+        </div>
+      </div>
+
+      {/* CategoryNav - filha direta para sticky funcionar contra o container alto */}
+      <CategoryNav 
+        categories={categories} 
+        activeCategory={activeCategory}
+        onSelectCategory={(id) => setActiveCategory(id)}
+      />
+
+      {/* Busca no desktop - abaixo da nav */}
+      <div className="px-4 z-10 mt-8 hidden md:block">
+        <div className="relative max-w-xl mx-auto">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/60" />
+          <Input
+            type="text"
+            placeholder="Busque pizza ou ingrediente..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 pr-10 h-12 text-xs border-2 border-muted bg-card shadow-md rounded-xl focus-visible:ring-primary"
+          />
+          {searchTerm && <X onClick={() => setSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground cursor-pointer" />}
         </div>
       </div>
 

@@ -147,10 +147,10 @@ const MenuItemCard = React.forwardRef<{ triggerClick: () => void }, MenuItemCard
           <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-3">{item.description}</p>
         </div>
         <div className={`flex items-center mt-2 ${isTwoColumns ? 'flex-col gap-2' : 'justify-between flex-row'}`}>
-          <div className="flex flex-col">
+          <div className="flex flex-col items-start">
             {item.freteGratis && <span className="text-xs font-semibold text-green-600 mb-1">🚚 Frete Grátis</span>}
             {item.priceFrom && <span className="text-xs text-gray-500 mb-1">a partir de</span>}
-            <span className={`font-bold text-brand ${isTwoColumns ? 'text-xs' : 'text-sm sm:text-lg'}`}>{formatCurrency(item.price)}</span>
+            <span className={`font-bold text-brand ${isTwoColumns ? 'text-base' : 'text-base sm:text-2xl'}`}>{formatCurrency(item.price)}</span>
           </div>
           <Button
             onClick={handleButtonClick}

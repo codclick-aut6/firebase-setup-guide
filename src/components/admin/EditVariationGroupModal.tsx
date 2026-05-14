@@ -1,6 +1,6 @@
 
-import React from "react";
-import { VariationGroup, Variation } from "@/types/menu";
+import React, { useState } from "react";
+import { VariationGroup, Variation, MenuItem } from "@/types/menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,13 +8,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Save, XCircle, ChevronUp, ChevronDown } from "lucide-react";
 import { saveVariationGroup } from "@/services/variationGroupService";
+import { saveVariation } from "@/services/variationService";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface EditVariationGroupModalProps {
   editVariationGroup: VariationGroup;
   setEditVariationGroup: (group: VariationGroup | null) => void;
   variations: Variation[];
+  menuItems: MenuItem[];
   variationGroups: VariationGroup[];
   onSuccess: () => void;
 }
@@ -23,10 +26,12 @@ export const EditVariationGroupModal = ({
   editVariationGroup,
   setEditVariationGroup,
   variations,
+  menuItems,
   variationGroups,
   onSuccess,
 }: EditVariationGroupModalProps) => {
   const { toast } = useToast();
+  const [sourceMode, setSourceMode] = useState<"menu" | "created" | "both">("created");
 
   const handleVariationCheckboxChange = (variationId: string) => {
     const currentVariations = editVariationGroup.variations || [];
@@ -81,12 +86,39 @@ export const EditVariationGroupModal = ({
     try {
       // Check if we're creating a new group or updating an existing one
       const isNew = !editVariationGroup.id || !variationGroups.some(g => g.id === editVariationGroup.id);
-      
-      const savedId = await saveVariationGroup(editVariationGroup);
-      
+
+      // Clonar quaisquer itens do cardápio que foram adicionados como variação,
+      // criando variações independentes para que edições não afetem o item original.
+      const existingVariationIds = new Set(variations.map(v => v.id));
+      const resolvedVariationIds: string[] = [];
+      for (const id of editVariationGroup.variations || []) {
+        if (existingVariationIds.has(id)) {
+          resolvedVariationIds.push(id);
+          continue;
+        }
+        const sourceItem = menuItems.find(m => m.id === id);
+        if (sourceItem) {
+          const newId = await saveVariation({
+            id: "",
+            name: sourceItem.name,
+            description: sourceItem.description || "",
+            additionalPrice: sourceItem.price || 0,
+            available: sourceItem.available !== false,
+            categoryIds: sourceItem.category ? [sourceItem.category] : [],
+          });
+          resolvedVariationIds.push(newId);
+        } else {
+          // Mantém o ID original (pode ser uma variação carregada de outro contexto)
+          resolvedVariationIds.push(id);
+        }
+      }
+
+      const groupToSave = { ...editVariationGroup, variations: resolvedVariationIds };
+      const savedId = await saveVariationGroup(groupToSave);
+
       // Sincronizar os itens de menu com as novas variações
       const { syncMenuItemsWithVariationGroup } = await import("@/services/variationGroupService");
-      await syncMenuItemsWithVariationGroup(savedId, editVariationGroup.variations);
+      await syncMenuItemsWithVariationGroup(savedId, resolvedVariationIds);
 
       setEditVariationGroup(null);
       toast({
@@ -201,100 +233,63 @@ export const EditVariationGroupModal = ({
             </div>
             
             <div className="space-y-2">
-              <Label>Variações Disponíveis</Label>
+              <Label>Fonte das Variações</Label>
+              <Select value={sourceMode} onValueChange={(v) => setSourceMode(v as "menu" | "created" | "both")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="menu">Variações Menu</SelectItem>
+                  <SelectItem value="created">Variações Criadas</SelectItem>
+                  <SelectItem value="both">Ambas</SelectItem>
+                </SelectContent>
+              </Select>
               <p className="text-xs text-gray-500">
                 Use as setas ↑↓ para definir a ordem em que as variações selecionadas serão exibidas ao cliente.
               </p>
-              <div className="max-h-72 overflow-y-auto border rounded-md p-2">
-                {(() => {
-                  const selectedIds = editVariationGroup.variations || [];
-                  const selectedVariations = selectedIds
-                    .map(id => variations.find(v => v.id === id))
-                    .filter((v): v is Variation => !!v);
-                  const unselectedVariations = variations
-                    .filter(v => !selectedIds.includes(v.id))
-                    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: 'base' }));
 
-                  return (
-                    <>
-                      {selectedVariations.length > 0 && (
-                        <div className="mb-2">
-                          <p className="text-[11px] font-semibold text-gray-600 uppercase tracking-wide px-1 py-1">
-                            Selecionadas (ordem de exibição)
-                          </p>
-                          {selectedVariations.map((variation, idx) => (
-                            <div key={variation.id} className="flex items-center gap-1 py-1 bg-blue-50/40 rounded px-1">
-                              <div className="flex flex-col">
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-5 w-5 p-0"
-                                  onClick={() => moveSelectedVariation(variation.id, "up")}
-                                  disabled={idx === 0}
-                                  title="Mover para cima"
-                                >
-                                  <ChevronUp className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-5 w-5 p-0"
-                                  onClick={() => moveSelectedVariation(variation.id, "down")}
-                                  disabled={idx === selectedVariations.length - 1}
-                                  title="Mover para baixo"
-                                >
-                                  <ChevronDown className="h-3 w-3" />
-                                </Button>
-                              </div>
-                              <span className="text-xs text-gray-400 w-5">#{idx + 1}</span>
-                              <Checkbox
-                                id={`var-${variation.id}`}
-                                checked
-                                onCheckedChange={() => handleVariationCheckboxChange(variation.id)}
-                              />
-                              <Label htmlFor={`var-${variation.id}`} className="cursor-pointer">
-                                {variation.name}
-                                {variation.additionalPrice > 0 && ` (+R$ ${variation.additionalPrice.toFixed(2)})`}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+              {sourceMode === "created" && (
+                <VariationSourceBox
+                  title="Variações Criadas"
+                  options={variations.map(v => ({ id: v.id, name: v.name, additionalPrice: v.additionalPrice }))}
+                  selectedIds={editVariationGroup.variations || []}
+                  onToggle={handleVariationCheckboxChange}
+                  onMove={moveSelectedVariation}
+                  emptyMessage="Nenhuma variação disponível. Adicione variações primeiro."
+                />
+              )}
 
-                      {unselectedVariations.length > 0 && (
-                        <div>
-                          {selectedVariations.length > 0 && (
-                            <p className="text-[11px] font-semibold text-gray-600 uppercase tracking-wide px-1 py-1 border-t mt-1 pt-2">
-                              Disponíveis
-                            </p>
-                          )}
-                          {unselectedVariations.map((variation) => (
-                            <div key={variation.id} className="flex items-center space-x-2 py-1 pl-7">
-                              <Checkbox
-                                id={`var-${variation.id}`}
-                                checked={false}
-                                onCheckedChange={() => handleVariationCheckboxChange(variation.id)}
-                              />
-                              <Label htmlFor={`var-${variation.id}`} className="cursor-pointer">
-                                {variation.name}
-                                {variation.additionalPrice > 0 && ` (+R$ ${variation.additionalPrice.toFixed(2)})`}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+              {sourceMode === "menu" && (
+                <VariationSourceBox
+                  title="Itens do Cardápio"
+                  options={menuItems.map(m => ({ id: m.id, name: m.name, additionalPrice: m.price }))}
+                  selectedIds={editVariationGroup.variations || []}
+                  onToggle={handleVariationCheckboxChange}
+                  onMove={moveSelectedVariation}
+                  emptyMessage="Nenhum item do cardápio disponível."
+                />
+              )}
 
-                      {variations.length === 0 && (
-                        <p className="text-sm text-gray-500 py-2">
-                          Nenhuma variação disponível. Adicione variações primeiro.
-                        </p>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
+              {sourceMode === "both" && (
+                <div className="space-y-3">
+                  <VariationSourceBox
+                    title="Itens do Cardápio"
+                    options={menuItems.map(m => ({ id: m.id, name: m.name, additionalPrice: m.price }))}
+                    selectedIds={editVariationGroup.variations || []}
+                    onToggle={handleVariationCheckboxChange}
+                    onMove={moveSelectedVariation}
+                    emptyMessage="Nenhum item do cardápio disponível."
+                  />
+                  <VariationSourceBox
+                    title="Variações Criadas"
+                    options={variations.map(v => ({ id: v.id, name: v.name, additionalPrice: v.additionalPrice }))}
+                    selectedIds={editVariationGroup.variations || []}
+                    onToggle={handleVariationCheckboxChange}
+                    onMove={moveSelectedVariation}
+                    emptyMessage="Nenhuma variação disponível. Adicione variações primeiro."
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex items-center space-x-2 pt-2">
@@ -339,5 +334,118 @@ export const EditVariationGroupModal = ({
         </div>
       </DialogContent>
     </Dialog>
+  );
+};
+
+interface SourceOption {
+  id: string;
+  name: string;
+  additionalPrice?: number;
+}
+
+interface VariationSourceBoxProps {
+  title: string;
+  options: SourceOption[];
+  selectedIds: string[];
+  onToggle: (id: string) => void;
+  onMove: (id: string, direction: "up" | "down") => void;
+  emptyMessage: string;
+}
+
+const VariationSourceBox = ({
+  title,
+  options,
+  selectedIds,
+  onToggle,
+  onMove,
+  emptyMessage,
+}: VariationSourceBoxProps) => {
+  const selected = selectedIds
+    .map(id => options.find(o => o.id === id))
+    .filter((o): o is SourceOption => !!o);
+  const unselected = options
+    .filter(o => !selectedIds.includes(o.id))
+    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" }));
+
+  return (
+    <div className="border rounded-md">
+      <div className="px-3 py-2 border-b bg-muted/40">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-700">{title}</p>
+      </div>
+      <div className="max-h-60 overflow-y-auto p-2">
+        {selected.length > 0 && (
+          <div className="mb-2">
+            <p className="text-[11px] font-semibold text-gray-600 uppercase tracking-wide px-1 py-1">
+              Selecionadas (ordem de exibição)
+            </p>
+            {selected.map((opt, idx) => (
+              <div key={opt.id} className="flex items-center gap-1 py-1 bg-blue-50/40 rounded px-1">
+                <div className="flex flex-col">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-5 w-5 p-0"
+                    onClick={() => onMove(opt.id, "up")}
+                    disabled={idx === 0}
+                    title="Mover para cima"
+                  >
+                    <ChevronUp className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-5 w-5 p-0"
+                    onClick={() => onMove(opt.id, "down")}
+                    disabled={idx === selected.length - 1}
+                    title="Mover para baixo"
+                  >
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </div>
+                <span className="text-xs text-gray-400 w-5">#{idx + 1}</span>
+                <Checkbox
+                  id={`src-${title}-${opt.id}`}
+                  checked
+                  onCheckedChange={() => onToggle(opt.id)}
+                />
+                <Label htmlFor={`src-${title}-${opt.id}`} className="cursor-pointer">
+                  {opt.name}
+                  {opt.additionalPrice && opt.additionalPrice > 0 ? ` (+R$ ${opt.additionalPrice.toFixed(2)})` : ""}
+                </Label>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {unselected.length > 0 && (
+          <div>
+            {selected.length > 0 && (
+              <p className="text-[11px] font-semibold text-gray-600 uppercase tracking-wide px-1 py-1 border-t mt-1 pt-2">
+                Disponíveis
+              </p>
+            )}
+            {unselected.map((opt) => (
+              <div key={opt.id} className="flex items-center space-x-2 py-1 pl-7">
+                <Checkbox
+                  id={`src-${title}-${opt.id}`}
+                  checked={false}
+                  onCheckedChange={() => onToggle(opt.id)}
+                />
+                <Label htmlFor={`src-${title}-${opt.id}`} className="cursor-pointer">
+                  {opt.name}
+                  {opt.additionalPrice && opt.additionalPrice > 0 ? ` (+R$ ${opt.additionalPrice.toFixed(2)})` : ""}
+                </Label>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {options.length === 0 && (
+          <p className="text-sm text-gray-500 py-2">{emptyMessage}</p>
+        )}
+      </div>
+    </div>
   );
 };
