@@ -1,7 +1,17 @@
 import React, { useState } from "react";
-import { Tag } from "lucide-react";
+import { Tag, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +24,47 @@ const CouponField: React.FC = () => {
   const { toast } = useToast();
   const [couponCode, setCouponCode] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
+  const [pendingCoupon, setPendingCoupon] = useState<any | null>(null);
+  const [chosenOption, setChosenOption] = useState<string>("");
+
+  const finalizeApply = (cupomData: any, brindeOverride?: { product_id: string; product_name: string }) => {
+    const produtoBrindeFinal = cupomData.produto_brinde
+      ? brindeOverride
+        ? {
+            ...cupomData.produto_brinde,
+            product_id: brindeOverride.product_id,
+            product_name: brindeOverride.product_name,
+            // mantém opcoes para referência mas o brinde escolhido vai resolver
+            opcoes: cupomData.produto_brinde.opcoes,
+          }
+        : cupomData.produto_brinde
+      : null;
+
+    setAppliedCoupon({
+      id: cupomData.id,
+      nome: cupomData.nome,
+      tipo: cupomData.tipo,
+      valor: cupomData.valor,
+      usos: cupomData.usos,
+      limite_uso: cupomData.limite_uso,
+      data_inicio: cupomData.data_inicio,
+      data_fim: cupomData.data_fim,
+      produtos_requeridos: cupomData.produtos_requeridos ?? null,
+      produto_brinde: produtoBrindeFinal,
+    });
+
+    const descricaoDesconto =
+      cupomData.tipo === "percentual"
+        ? `${cupomData.valor}%`
+        : cupomData.tipo === "frete_gratis"
+        ? "Frete Grátis"
+        : cupomData.tipo === "compre_e_ganhe"
+        ? `🎁 Brinde: ${produtoBrindeFinal?.product_name || "produto"}`
+        : formatCurrency(cupomData.valor);
+
+    toast({ title: "Cupom aplicado!", description: `Cupom aplicado: ${descricaoDesconto}` });
+    setCouponCode("");
+  };
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
@@ -91,36 +142,39 @@ const CouponField: React.FC = () => {
         }
       }
 
-      setAppliedCoupon({
-        id: cupomData.id,
-        nome: cupomData.nome,
-        tipo: cupomData.tipo,
-        valor: cupomData.valor,
-        usos: cupomData.usos,
-        limite_uso: cupomData.limite_uso,
-        data_inicio: cupomData.data_inicio,
-        data_fim: cupomData.data_fim,
-        produtos_requeridos: cupomData.produtos_requeridos ?? null,
-        produto_brinde: cupomData.produto_brinde ?? null,
-      });
+      // Se for compre e ganhe com grupo de opções, abrir seletor antes de aplicar
+      const opcoes = cupomData.produto_brinde?.opcoes as
+        | { product_id: string; product_name: string }[]
+        | undefined;
+      if (cupomData.tipo === "compre_e_ganhe" && opcoes && opcoes.length > 0) {
+        setPendingCoupon(cupomData);
+        setChosenOption(opcoes[0].product_id);
+        return;
+      }
 
-      const descricaoDesconto =
-        cupomData.tipo === "percentual"
-          ? `${cupomData.valor}%`
-          : cupomData.tipo === "frete_gratis"
-          ? "Frete Grátis"
-          : cupomData.tipo === "compre_e_ganhe"
-          ? `🎁 Brinde: ${cupomData.produto_brinde?.product_name || "produto"}`
-          : formatCurrency(cupomData.valor);
-
-      toast({ title: "Cupom aplicado!", description: `Cupom aplicado: ${descricaoDesconto}` });
-      setCouponCode("");
+      finalizeApply(cupomData);
     } catch (err) {
       console.error("Erro ao aplicar cupom:", err);
       toast({ title: "Erro", description: "Não foi possível aplicar o cupom", variant: "destructive" });
     } finally {
       setCouponLoading(false);
     }
+  };
+
+  const handleConfirmGiftChoice = () => {
+    if (!pendingCoupon) return;
+    const opcoes = (pendingCoupon.produto_brinde?.opcoes || []) as {
+      product_id: string;
+      product_name: string;
+    }[];
+    const escolhido = opcoes.find((o) => o.product_id === chosenOption);
+    if (!escolhido) {
+      toast({ title: "Selecione um brinde", variant: "destructive" });
+      return;
+    }
+    finalizeApply(pendingCoupon, escolhido);
+    setPendingCoupon(null);
+    setChosenOption("");
   };
 
   const handleRemoveCoupon = () => {
@@ -164,6 +218,58 @@ const CouponField: React.FC = () => {
           </p>
         </div>
       )}
+
+      {/* Diálogo para escolher brinde quando o cupom oferece um grupo de opções */}
+      <Dialog
+        open={!!pendingCoupon}
+        onOpenChange={(o) => {
+          if (!o) {
+            setPendingCoupon(null);
+            setChosenOption("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Gift className="h-5 w-5" /> Escolha seu brinde
+            </DialogTitle>
+            <DialogDescription>
+              {pendingCoupon?.produto_brinde?.quantidade || 1}x brinde incluído com o cupom{" "}
+              <strong>{pendingCoupon?.nome}</strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          <RadioGroup value={chosenOption} onValueChange={setChosenOption} className="space-y-2">
+            {(pendingCoupon?.produto_brinde?.opcoes || []).map(
+              (o: { product_id: string; product_name: string }) => (
+                <div
+                  key={o.product_id}
+                  className="flex items-center gap-3 border rounded p-3 hover:bg-muted/50"
+                >
+                  <RadioGroupItem value={o.product_id} id={`gift-${o.product_id}`} />
+                  <Label htmlFor={`gift-${o.product_id}`} className="flex-1 cursor-pointer">
+                    {o.product_name}
+                  </Label>
+                </div>
+              )
+            )}
+          </RadioGroup>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPendingCoupon(null);
+                setChosenOption("");
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmGiftChoice}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
