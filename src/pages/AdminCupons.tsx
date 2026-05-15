@@ -28,6 +28,8 @@ import { getAllCategories } from "@/services/categoryService";
 import type { MenuItem, Category } from "@/types/menu";
 import { toast } from "@/hooks/use-toast";
 
+type BrindeOpcao = { product_id: string; product_name: string };
+
 type ProdutoRef = {
   // "produto" = exige produto específico; "categoria" = qualquer item da categoria
   tipo?: "produto" | "categoria";
@@ -38,6 +40,8 @@ type ProdutoRef = {
   category_ids?: string[];
   category_names?: string[];
   quantidade: number;
+  // Para produto_brinde: quando opcoes tem mais de 1 item, o cliente escolhe 1 no checkout
+  opcoes?: BrindeOpcao[];
 };
 
 type TipoCupom = "percentual" | "fixo" | "frete_gratis" | "compre_e_ganhe";
