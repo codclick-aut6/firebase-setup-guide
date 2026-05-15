@@ -630,16 +630,26 @@ export default function AdminCupons() {
                     <Gift className="h-4 w-4" /> Produto Brinde
                   </Label>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Será adicionado ao carrinho com valor R$ 0,00 quando o cupom for aplicado.
+                    Será adicionado ao carrinho com valor R$ 0,00. Use um único produto OU adicione um grupo
+                    de opções para o cliente escolher no checkout.
                   </p>
+
+                  {/* Brinde único — desabilita quando há grupo de opções */}
                   <div className="flex gap-2 items-center">
                     <div className="flex-1">
                       <Select
                         value={form.produto_brinde?.product_id || undefined}
                         onValueChange={selecionarBrinde}
+                        disabled={(form.produto_brinde?.opcoes?.length || 0) > 0}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione o brinde" />
+                          <SelectValue
+                            placeholder={
+                              (form.produto_brinde?.opcoes?.length || 0) > 0
+                                ? "Usando grupo de opções abaixo"
+                                : "Selecione o brinde"
+                            }
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {[...menuItems]
@@ -659,6 +669,54 @@ export default function AdminCupons() {
                       value={form.produto_brinde?.quantidade || 1}
                       onChange={(e) => atualizarQuantidadeBrinde(Number(e.target.value))}
                     />
+                  </div>
+
+                  {/* Grupo de opções — cliente escolhe 1 no checkout */}
+                  <div className="mt-3 border rounded p-3 space-y-2 bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Grupo de opções (cliente escolhe 1)</Label>
+                      <span className="text-xs text-muted-foreground">
+                        {(form.produto_brinde?.opcoes?.length || 0)} opção(ões)
+                      </span>
+                    </div>
+                    <Select value="" onValueChange={adicionarOpcaoBrinde}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="+ Adicionar opção de brinde" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[...menuItems]
+                          .filter(
+                            (m) =>
+                              !(form.produto_brinde?.opcoes || []).some((o) => o.product_id === m.id)
+                          )
+                          .sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" }))
+                          .map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {(form.produto_brinde?.opcoes || []).length > 0 && (
+                      <ul className="space-y-1">
+                        {(form.produto_brinde?.opcoes || []).map((o) => (
+                          <li
+                            key={o.product_id}
+                            className="flex items-center justify-between bg-background rounded px-2 py-1 text-sm"
+                          >
+                            <span>{o.product_name}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removerOpcaoBrinde(o.product_id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
               </div>
