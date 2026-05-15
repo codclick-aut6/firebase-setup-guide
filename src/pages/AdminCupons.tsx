@@ -28,6 +28,8 @@ import { getAllCategories } from "@/services/categoryService";
 import type { MenuItem, Category } from "@/types/menu";
 import { toast } from "@/hooks/use-toast";
 
+type BrindeOpcao = { product_id: string; product_name: string };
+
 type ProdutoRef = {
   // "produto" = exige produto específico; "categoria" = qualquer item da categoria
   tipo?: "produto" | "categoria";
@@ -38,6 +40,8 @@ type ProdutoRef = {
   category_ids?: string[];
   category_names?: string[];
   quantidade: number;
+  // Para produto_brinde: quando opcoes tem mais de 1 item, o cliente escolhe 1 no checkout
+  opcoes?: BrindeOpcao[];
 };
 
 type TipoCupom = "percentual" | "fixo" | "frete_gratis" | "compre_e_ganhe";
@@ -149,10 +153,12 @@ export default function AdminCupons() {
         });
         return;
       }
-      if (!form.produto_brinde?.product_id) {
+      const brinde = form.produto_brinde;
+      const temOpcoes = (brinde?.opcoes?.length || 0) > 0;
+      if (!brinde?.product_id && !temOpcoes) {
         toast({
           title: "Configuração incompleta",
-          description: "Selecione o produto brinde.",
+          description: "Selecione o brinde ou adicione opções de brinde.",
           variant: "destructive",
         });
         return;
@@ -332,6 +338,7 @@ export default function AdminCupons() {
     setForm((prev) => ({
       ...prev,
       produto_brinde: {
+        ...(prev.produto_brinde || { quantidade: 1 }),
         product_id: productId,
         product_name: produto?.name || "",
         quantidade: prev.produto_brinde?.quantidade || 1,
@@ -344,8 +351,42 @@ export default function AdminCupons() {
       ...prev,
       produto_brinde: prev.produto_brinde
         ? { ...prev.produto_brinde, quantidade: Math.max(1, qtd) }
-        : null,
+        : { product_id: "", product_name: "", quantidade: Math.max(1, qtd), opcoes: [] },
     }));
+  }
+
+  function adicionarOpcaoBrinde(productId: string) {
+    if (!productId) return;
+    const produto = menuItems.find((p) => p.id === productId);
+    if (!produto) return;
+    setForm((prev) => {
+      const atual = prev.produto_brinde || { product_id: "", product_name: "", quantidade: 1, opcoes: [] };
+      const opcoes = atual.opcoes || [];
+      if (opcoes.some((o) => o.product_id === productId)) return prev;
+      return {
+        ...prev,
+        produto_brinde: {
+          ...atual,
+          // Limpa o brinde único quando há opções (cliente escolherá no checkout)
+          product_id: "",
+          product_name: "",
+          opcoes: [...opcoes, { product_id: productId, product_name: produto.name }],
+        },
+      };
+    });
+  }
+
+  function removerOpcaoBrinde(productId: string) {
+    setForm((prev) => {
+      if (!prev.produto_brinde) return prev;
+      return {
+        ...prev,
+        produto_brinde: {
+          ...prev.produto_brinde,
+          opcoes: (prev.produto_brinde.opcoes || []).filter((o) => o.product_id !== productId),
+        },
+      };
+    });
   }
 
   return (
@@ -589,16 +630,26 @@ export default function AdminCupons() {
                     <Gift className="h-4 w-4" /> Produto Brinde
                   </Label>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Será adicionado ao carrinho com valor R$ 0,00 quando o cupom for aplicado.
+                    Será adicionado ao carrinho com valor R$ 0,00. Use um único produto OU adicione um grupo
+                    de opções para o cliente escolher no checkout.
                   </p>
+
+                  {/* Brinde único — desabilita quando há grupo de opções */}
                   <div className="flex gap-2 items-center">
                     <div className="flex-1">
                       <Select
                         value={form.produto_brinde?.product_id || undefined}
                         onValueChange={selecionarBrinde}
+                        disabled={(form.produto_brinde?.opcoes?.length || 0) > 0}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione o brinde" />
+                          <SelectValue
+                            placeholder={
+                              (form.produto_brinde?.opcoes?.length || 0) > 0
+                                ? "Usando grupo de opções abaixo"
+                                : "Selecione o brinde"
+                            }
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {[...menuItems]
@@ -618,6 +669,54 @@ export default function AdminCupons() {
                       value={form.produto_brinde?.quantidade || 1}
                       onChange={(e) => atualizarQuantidadeBrinde(Number(e.target.value))}
                     />
+                  </div>
+
+                  {/* Grupo de opções — cliente escolhe 1 no checkout */}
+                  <div className="mt-3 border rounded p-3 space-y-2 bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Grupo de opções (cliente escolhe 1)</Label>
+                      <span className="text-xs text-muted-foreground">
+                        {(form.produto_brinde?.opcoes?.length || 0)} opção(ões)
+                      </span>
+                    </div>
+                    <Select value="" onValueChange={adicionarOpcaoBrinde}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="+ Adicionar opção de brinde" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[...menuItems]
+                          .filter(
+                            (m) =>
+                              !(form.produto_brinde?.opcoes || []).some((o) => o.product_id === m.id)
+                          )
+                          .sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" }))
+                          .map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {(form.produto_brinde?.opcoes || []).length > 0 && (
+                      <ul className="space-y-1">
+                        {(form.produto_brinde?.opcoes || []).map((o) => (
+                          <li
+                            key={o.product_id}
+                            className="flex items-center justify-between bg-background rounded px-2 py-1 text-sm"
+                          >
+                            <span>{o.product_name}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removerOpcaoBrinde(o.product_id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
               </div>
@@ -746,10 +845,20 @@ export default function AdminCupons() {
                     })}
                   </ul>
                   {c.produto_brinde && (
-                    <p className="font-semibold flex items-center gap-1 pt-1">
-                      <Gift className="h-3 w-3" /> Brinde:{" "}
-                      {c.produto_brinde.quantidade}x {c.produto_brinde.product_name}
-                    </p>
+                    <div className="pt-1">
+                      <p className="font-semibold flex items-center gap-1">
+                        <Gift className="h-3 w-3" /> Brinde:{" "}
+                        {c.produto_brinde.quantidade}x{" "}
+                        {(c.produto_brinde.opcoes?.length || 0) > 0
+                          ? `Escolha 1 entre ${c.produto_brinde.opcoes!.length} opções`
+                          : c.produto_brinde.product_name}
+                      </p>
+                      {(c.produto_brinde.opcoes?.length || 0) > 0 && (
+                        <p className="text-[11px] text-muted-foreground pl-4">
+                          {c.produto_brinde.opcoes!.map((o) => o.product_name).join(" • ")}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
