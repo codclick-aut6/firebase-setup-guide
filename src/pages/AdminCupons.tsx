@@ -153,10 +153,12 @@ export default function AdminCupons() {
         });
         return;
       }
-      if (!form.produto_brinde?.product_id) {
+      const brinde = form.produto_brinde;
+      const temOpcoes = (brinde?.opcoes?.length || 0) > 0;
+      if (!brinde?.product_id && !temOpcoes) {
         toast({
           title: "Configuração incompleta",
-          description: "Selecione o produto brinde.",
+          description: "Selecione o brinde ou adicione opções de brinde.",
           variant: "destructive",
         });
         return;
