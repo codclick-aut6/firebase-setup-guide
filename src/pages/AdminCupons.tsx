@@ -338,6 +338,7 @@ export default function AdminCupons() {
     setForm((prev) => ({
       ...prev,
       produto_brinde: {
+        ...(prev.produto_brinde || { quantidade: 1 }),
         product_id: productId,
         product_name: produto?.name || "",
         quantidade: prev.produto_brinde?.quantidade || 1,
@@ -350,8 +351,42 @@ export default function AdminCupons() {
       ...prev,
       produto_brinde: prev.produto_brinde
         ? { ...prev.produto_brinde, quantidade: Math.max(1, qtd) }
-        : null,
+        : { product_id: "", product_name: "", quantidade: Math.max(1, qtd), opcoes: [] },
     }));
+  }
+
+  function adicionarOpcaoBrinde(productId: string) {
+    if (!productId) return;
+    const produto = menuItems.find((p) => p.id === productId);
+    if (!produto) return;
+    setForm((prev) => {
+      const atual = prev.produto_brinde || { product_id: "", product_name: "", quantidade: 1, opcoes: [] };
+      const opcoes = atual.opcoes || [];
+      if (opcoes.some((o) => o.product_id === productId)) return prev;
+      return {
+        ...prev,
+        produto_brinde: {
+          ...atual,
+          // Limpa o brinde único quando há opções (cliente escolherá no checkout)
+          product_id: "",
+          product_name: "",
+          opcoes: [...opcoes, { product_id: productId, product_name: produto.name }],
+        },
+      };
+    });
+  }
+
+  function removerOpcaoBrinde(productId: string) {
+    setForm((prev) => {
+      if (!prev.produto_brinde) return prev;
+      return {
+        ...prev,
+        produto_brinde: {
+          ...prev.produto_brinde,
+          opcoes: (prev.produto_brinde.opcoes || []).filter((o) => o.product_id !== productId),
+        },
+      };
+    });
   }
 
   return (
