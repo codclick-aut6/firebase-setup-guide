@@ -14,6 +14,8 @@ interface ProdutoRef {
   category_id?: string;
   category_name?: string;
   quantidade: number;
+  // Para produto_brinde: quando opcoes tem mais de 1 item, o cliente escolhe 1 antes de aplicar
+  opcoes?: { product_id: string; product_name: string }[];
 }
 
 interface AppliedCoupon {
