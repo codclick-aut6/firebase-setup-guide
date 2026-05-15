@@ -845,10 +845,20 @@ export default function AdminCupons() {
                     })}
                   </ul>
                   {c.produto_brinde && (
-                    <p className="font-semibold flex items-center gap-1 pt-1">
-                      <Gift className="h-3 w-3" /> Brinde:{" "}
-                      {c.produto_brinde.quantidade}x {c.produto_brinde.product_name}
-                    </p>
+                    <div className="pt-1">
+                      <p className="font-semibold flex items-center gap-1">
+                        <Gift className="h-3 w-3" /> Brinde:{" "}
+                        {c.produto_brinde.quantidade}x{" "}
+                        {(c.produto_brinde.opcoes?.length || 0) > 0
+                          ? `Escolha 1 entre ${c.produto_brinde.opcoes!.length} opções`
+                          : c.produto_brinde.product_name}
+                      </p>
+                      {(c.produto_brinde.opcoes?.length || 0) > 0 && (
+                        <p className="text-[11px] text-muted-foreground pl-4">
+                          {c.produto_brinde.opcoes!.map((o) => o.product_name).join(" • ")}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
