@@ -4,6 +4,8 @@ import { ArrowLeft, Package, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Gift } from "lucide-react";
+import { getRecompensasCliente, FidelidadeRecompensa } from "@/services/fidelidadeService";
 import { useAuth } from "@/hooks/useAuth";
 import { Order } from "@/types/order";
 import { supabase } from "@/integrations/supabase/client";
