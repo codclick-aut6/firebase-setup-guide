@@ -24,6 +24,8 @@ const Configuracoes = () => {
   const [webhookStatus, setWebhookStatus] = useState("");
   const [webhookAuth, setWebhookAuth] = useState("");
   const [webhookEventos, setWebhookEventos] = useState("");
+  const [webhookFidelidade, setWebhookFidelidade] = useState("");
+  const [savingWebhookFidelidade, setSavingWebhookFidelidade] = useState(false);
   const [tempoAbandonedCart, setTempoAbandonedCart] = useState("25");
   const [whatsappVerificationEnabled, setWhatsappVerificationEnabled] = useState(true);
   const [savingWhatsappToggle, setSavingWhatsappToggle] = useState(false);
