@@ -191,8 +191,8 @@ const CouponField: React.FC = () => {
       const elegiveis = cartItems.filter((i: any) => !i?.__couponGiftId);
       const reqsAtendidos =
         cupomData.tipo !== "compre_e_ganhe" ||
-        (reqs.length > 0 &&
-          reqs.every((req: any) => {
+        reqs.length === 0 ||
+        reqs.every((req: any) => {
             const ehCategoria = req.tipo === "categoria";
             const total = elegiveis
               .filter((i: any) =>
@@ -202,7 +202,7 @@ const CouponField: React.FC = () => {
               )
               .reduce((s: number, i: any) => s + (i.quantity || 0), 0);
             return total >= req.quantidade;
-          }));
+          });
       if (reqsAtendidos) {
         toast({ title: "Cupom aplicado!", description: `Cupom aplicado: ${descricaoDesconto}` });
       } else {
@@ -281,7 +281,7 @@ const CouponField: React.FC = () => {
                       return Math.floor(totalNoCarrinho / Math.max(1, req.quantidade || 1));
                     })
                   )
-                : 0;
+                : 1;
               const totalAlvo = (appliedCoupon.produto_brinde?.quantidade || 1) * Math.max(0, ciclos);
               const opcoes = appliedCoupon.produto_brinde?.opcoes || [];
               const escolhas = appliedCoupon.brindes_escolhidos || [];

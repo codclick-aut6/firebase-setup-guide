@@ -24,6 +24,8 @@ const Configuracoes = () => {
   const [webhookStatus, setWebhookStatus] = useState("");
   const [webhookAuth, setWebhookAuth] = useState("");
   const [webhookEventos, setWebhookEventos] = useState("");
+  const [webhookFidelidade, setWebhookFidelidade] = useState("");
+  const [savingWebhookFidelidade, setSavingWebhookFidelidade] = useState(false);
   const [tempoAbandonedCart, setTempoAbandonedCart] = useState("25");
   const [whatsappVerificationEnabled, setWhatsappVerificationEnabled] = useState(true);
   const [savingWhatsappToggle, setSavingWhatsappToggle] = useState(false);
@@ -54,7 +56,7 @@ const Configuracoes = () => {
       const { data, error } = await supabase
         .from("configuracoes")
         .select("chave, valor")
-        .in("chave", ["cron_ga4_schedule", "webhook_chatassistant", "mensagem_atendimento", "webhook_status_pedido", "webhook_autenticacao", "webhook_eventos", "tempo_disparo_abandoned_cart", "whatsapp_verification_enabled", "comunicacao_instancia", "comunicacao_apikey", "auto_print_on_accept", "stripe_enabled", "stripe_mode", "stripe_publishable_key", "stripe_secret_key", "stripe_webhook_secret", "payment_card_delivery_enabled", "payment_cash_enabled"]);
+        .in("chave", ["cron_ga4_schedule", "webhook_chatassistant", "mensagem_atendimento", "webhook_status_pedido", "webhook_autenticacao", "webhook_eventos", "webhook_fidelidade", "tempo_disparo_abandoned_cart", "whatsapp_verification_enabled", "comunicacao_instancia", "comunicacao_apikey", "auto_print_on_accept", "stripe_enabled", "stripe_mode", "stripe_publishable_key", "stripe_secret_key", "stripe_webhook_secret", "payment_card_delivery_enabled", "payment_cash_enabled"]);
 
       if (error) throw error;
 
@@ -65,6 +67,7 @@ const Configuracoes = () => {
           if (row.chave === "webhook_status_pedido" && row.valor) setWebhookStatus(row.valor);
           if (row.chave === "webhook_autenticacao" && row.valor) setWebhookAuth(row.valor);
           if (row.chave === "webhook_eventos" && row.valor) setWebhookEventos(row.valor);
+          if (row.chave === "webhook_fidelidade" && row.valor) setWebhookFidelidade(row.valor);
           if (row.chave === "tempo_disparo_abandoned_cart" && row.valor) setTempoAbandonedCart(row.valor);
           if (row.chave === "mensagem_atendimento" && row.valor) setMensagemAtendimento(row.valor);
           if (row.chave === "whatsapp_verification_enabled") setWhatsappVerificationEnabled(row.valor !== "false");
@@ -690,6 +693,52 @@ const Configuracoes = () => {
               }}>
                 <RefreshCw className={`h-4 w-4 mr-2 ${savingWebhookEventos ? "animate-spin" : ""}`} />
                 {savingWebhookEventos ? "Salvando..." : "Salvar Webhook de Eventos"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Webhook Fidelidade */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Bell className="h-6 w-6 text-primary" />
+              <div>
+                <CardTitle>Webhook de Fidelidade</CardTitle>
+                <CardDescription>URL acionada quando um cliente atinge a meta de uma regra de fidelidade. O payload inclui os dados do cliente, a regra atingida e o código do cupom de prêmio gerado.</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="webhook_fidelidade">URL do Webhook</Label>
+                <Input
+                  id="webhook_fidelidade"
+                  value={webhookFidelidade}
+                  onChange={(e) => setWebhookFidelidade(e.target.value)}
+                  placeholder="https://seu-webhook.com/fidelidade"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Disparado automaticamente quando o cliente conclui a quantidade de compras necessária e ganha o prêmio.
+                </p>
+              </div>
+              <Button className="w-full" disabled={savingWebhookFidelidade} onClick={async () => {
+                setSavingWebhookFidelidade(true);
+                try {
+                  const { error } = await supabase
+                    .from("configuracoes")
+                    .upsert({ chave: "webhook_fidelidade", valor: webhookFidelidade, updated_at: new Date().toISOString() }, { onConflict: "chave" });
+                  if (error) throw error;
+                  toast({ title: "Sucesso!", description: "Webhook de fidelidade salvo." });
+                } catch (error: any) {
+                  toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+                } finally {
+                  setSavingWebhookFidelidade(false);
+                }
+              }}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${savingWebhookFidelidade ? "animate-spin" : ""}`} />
+                {savingWebhookFidelidade ? "Salvando..." : "Salvar Webhook de Fidelidade"}
               </Button>
             </div>
           </CardContent>
