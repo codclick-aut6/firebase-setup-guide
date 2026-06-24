@@ -67,6 +67,7 @@ const Configuracoes = () => {
           if (row.chave === "webhook_status_pedido" && row.valor) setWebhookStatus(row.valor);
           if (row.chave === "webhook_autenticacao" && row.valor) setWebhookAuth(row.valor);
           if (row.chave === "webhook_eventos" && row.valor) setWebhookEventos(row.valor);
+          if (row.chave === "webhook_fidelidade" && row.valor) setWebhookFidelidade(row.valor);
           if (row.chave === "tempo_disparo_abandoned_cart" && row.valor) setTempoAbandonedCart(row.valor);
           if (row.chave === "mensagem_atendimento" && row.valor) setMensagemAtendimento(row.valor);
           if (row.chave === "whatsapp_verification_enabled") setWhatsappVerificationEnabled(row.valor !== "false");
