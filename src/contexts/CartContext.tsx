@@ -303,7 +303,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     items: CartItem[],
     requeridos: ProdutoRef[]
   ): boolean => {
-    if (!requeridos?.length) return false;
+    // Sem requisitos = brinde direto (prêmio de fidelidade): sempre satisfeito
+    if (!requeridos?.length) return true;
     const elegiveis = items.filter((i) => !isGiftItem(i));
     return requeridos.every((req) => {
       const ehCategoria = req.tipo === "categoria";
