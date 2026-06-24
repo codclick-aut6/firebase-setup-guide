@@ -56,6 +56,7 @@ const MeusPedidos = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [rewards, setRewards] = useState<FidelidadeRecompensa[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
