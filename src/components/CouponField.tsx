@@ -281,7 +281,7 @@ const CouponField: React.FC = () => {
                       return Math.floor(totalNoCarrinho / Math.max(1, req.quantidade || 1));
                     })
                   )
-                : 0;
+                : 1;
               const totalAlvo = (appliedCoupon.produto_brinde?.quantidade || 1) * Math.max(0, ciclos);
               const opcoes = appliedCoupon.produto_brinde?.opcoes || [];
               const escolhas = appliedCoupon.brindes_escolhidos || [];
