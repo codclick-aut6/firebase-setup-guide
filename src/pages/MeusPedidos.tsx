@@ -91,6 +91,15 @@ const MeusPedidos = () => {
 
         const variants = phone ? phoneVariants(phone) : [];
 
+        // Recompensas de fidelidade do cliente
+        try {
+          const recompensas = await getRecompensasCliente(variants.length ? variants : phone ? [phone] : []);
+          if (!cancelled) setRewards(recompensas);
+        } catch (e) {
+          console.error("Erro ao carregar recompensas:", e);
+        }
+
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
