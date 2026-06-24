@@ -698,6 +698,52 @@ const Configuracoes = () => {
           </CardContent>
         </Card>
 
+        {/* Webhook Fidelidade */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Bell className="h-6 w-6 text-primary" />
+              <div>
+                <CardTitle>Webhook de Fidelidade</CardTitle>
+                <CardDescription>URL acionada quando um cliente atinge a meta de uma regra de fidelidade. O payload inclui os dados do cliente, a regra atingida e o código do cupom de prêmio gerado.</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="webhook_fidelidade">URL do Webhook</Label>
+                <Input
+                  id="webhook_fidelidade"
+                  value={webhookFidelidade}
+                  onChange={(e) => setWebhookFidelidade(e.target.value)}
+                  placeholder="https://seu-webhook.com/fidelidade"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Disparado automaticamente quando o cliente conclui a quantidade de compras necessária e ganha o prêmio.
+                </p>
+              </div>
+              <Button className="w-full" disabled={savingWebhookFidelidade} onClick={async () => {
+                setSavingWebhookFidelidade(true);
+                try {
+                  const { error } = await supabase
+                    .from("configuracoes")
+                    .upsert({ chave: "webhook_fidelidade", valor: webhookFidelidade, updated_at: new Date().toISOString() }, { onConflict: "chave" });
+                  if (error) throw error;
+                  toast({ title: "Sucesso!", description: "Webhook de fidelidade salvo." });
+                } catch (error: any) {
+                  toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+                } finally {
+                  setSavingWebhookFidelidade(false);
+                }
+              }}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${savingWebhookFidelidade ? "animate-spin" : ""}`} />
+                {savingWebhookFidelidade ? "Salvando..." : "Salvar Webhook de Fidelidade"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Chat Assistant Config */}
         <Card>
           <CardHeader>
