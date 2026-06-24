@@ -190,6 +190,31 @@ const MeusPedidos = () => {
       </div>
 
       <div className="container mx-auto px-4 py-6">
+        {currentUser && rewards.length > 0 && (
+          <div className="mb-6 space-y-3">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Gift className="h-5 w-5 text-amber-500" /> Suas recompensas
+            </h2>
+            {rewards.map((r) => (
+              <Card key={r.id} className="border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50">
+                <CardContent className="p-4 flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <div className="font-semibold text-amber-800">🎉 Parabéns! Você ganhou um prêmio</div>
+                    <div className="text-sm text-amber-700">{r.premio_descricao || "Recompensa de fidelidade"}</div>
+                  </div>
+                  {r.cupom_codigo && (
+                    <div className="text-right">
+                      <div className="text-xs text-muted-foreground">Use o cupom</div>
+                      <Badge className="bg-amber-500 text-white text-base px-3 py-1 font-mono">
+                        {r.cupom_codigo}
+                      </Badge>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
         {!currentUser ? (
           <div className="text-center py-12">
             <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
