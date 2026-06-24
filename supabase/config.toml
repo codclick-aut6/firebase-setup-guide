@@ -1,0 +1,13 @@
+project_id = "aealgiyzbenbhhftwkxb"
+
+[functions.registrar-uso-cupom]
+verify_jwt = false
+
+[functions.calcular-distancia]
+verify_jwt = false
+
+[functions.ga4-analytics]
+verify_jwt = false
+
+[functions.update-cron]
+verify_jwt = false
