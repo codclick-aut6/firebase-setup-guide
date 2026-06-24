@@ -411,27 +411,42 @@ export type Database = {
       }
       fidelidade_historico: {
         Row: {
+          cupom_codigo: string | null
           data: string | null
           id: string
+          nome_cliente: string | null
           observacao: string | null
           premio_concedido: boolean | null
+          premio_descricao: string | null
           regra_id: string | null
+          resgatado: boolean
+          telefone_cliente: string | null
           user_id: string | null
         }
         Insert: {
+          cupom_codigo?: string | null
           data?: string | null
           id?: string
+          nome_cliente?: string | null
           observacao?: string | null
           premio_concedido?: boolean | null
+          premio_descricao?: string | null
           regra_id?: string | null
+          resgatado?: boolean
+          telefone_cliente?: string | null
           user_id?: string | null
         }
         Update: {
+          cupom_codigo?: string | null
           data?: string | null
           id?: string
+          nome_cliente?: string | null
           observacao?: string | null
           premio_concedido?: boolean | null
+          premio_descricao?: string | null
           regra_id?: string | null
+          resgatado?: boolean
+          telefone_cliente?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -455,8 +470,10 @@ export type Database = {
         Row: {
           contagem_pizzas: number
           criado_em: string | null
+          eventos: Json
           id: string
           nome_cliente: string | null
+          regra_id: string | null
           telefone_cliente: string
           ultima_atualizacao: string | null
           valor_gasto_pizzas: number
@@ -464,8 +481,10 @@ export type Database = {
         Insert: {
           contagem_pizzas?: number
           criado_em?: string | null
+          eventos?: Json
           id?: string
           nome_cliente?: string | null
+          regra_id?: string | null
           telefone_cliente: string
           ultima_atualizacao?: string | null
           valor_gasto_pizzas?: number
@@ -473,8 +492,10 @@ export type Database = {
         Update: {
           contagem_pizzas?: number
           criado_em?: string | null
+          eventos?: Json
           id?: string
           nome_cliente?: string | null
+          regra_id?: string | null
           telefone_cliente?: string
           ultima_atualizacao?: string | null
           valor_gasto_pizzas?: number
@@ -485,35 +506,56 @@ export type Database = {
         Row: {
           ativo: boolean | null
           criado_em: string | null
-          criterio: string
+          criterio: string | null
           descricao: string | null
           id: string
-          meta: number
+          meta: number | null
           nome: string
+          premio_cupom_tipo: string | null
+          premio_cupom_valor: number | null
           premio_id: string | null
+          premio_produto: Json | null
           premio_tipo: string
+          premio_validade_dias: number
+          produto_requerido: Json | null
+          quantidade_necessaria: number
+          validade_dias: number
         }
         Insert: {
           ativo?: boolean | null
           criado_em?: string | null
-          criterio: string
+          criterio?: string | null
           descricao?: string | null
           id?: string
-          meta: number
+          meta?: number | null
           nome: string
+          premio_cupom_tipo?: string | null
+          premio_cupom_valor?: number | null
           premio_id?: string | null
+          premio_produto?: Json | null
           premio_tipo: string
+          premio_validade_dias?: number
+          produto_requerido?: Json | null
+          quantidade_necessaria?: number
+          validade_dias?: number
         }
         Update: {
           ativo?: boolean | null
           criado_em?: string | null
-          criterio?: string
+          criterio?: string | null
           descricao?: string | null
           id?: string
-          meta?: number
+          meta?: number | null
           nome?: string
+          premio_cupom_tipo?: string | null
+          premio_cupom_valor?: number | null
           premio_id?: string | null
+          premio_produto?: Json | null
           premio_tipo?: string
+          premio_validade_dias?: number
+          produto_requerido?: Json | null
+          quantidade_necessaria?: number
+          validade_dias?: number
         }
         Relationships: []
       }

@@ -1,402 +1,461 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Referência a um produto específico OU a uma categoria (mesma estrutura do cupom "compre e ganhe")
+export type ProdutoRefFid = {
+  tipo: "produto" | "categoria";
+  product_id?: string;
+  product_name?: string;
+  category_id?: string;
+  category_name?: string;
+  category_ids?: string[];
+  category_names?: string[];
+};
+
 export interface FidelidadeRegra {
   id: string;
   nome: string;
   descricao: string | null;
-  criterio: "quantidade_compras" | "valor_gasto";
-  meta: number;
-  premio_tipo: "cupom" | "produto";
-  premio_id: string | null;
+  // PRODUTO que conta para a meta
+  produto_requerido: ProdutoRefFid | null;
+  // X = quantidade necessária
+  quantidade_necessaria: number;
+  // Y = janela de validade do acúmulo (0 = indeterminado)
+  validade_dias: number;
+  // PRÊMIO
+  premio_tipo: "produto" | "categoria" | "cupom";
+  premio_produto: ProdutoRefFid | null; // quando premio_tipo = produto | categoria
+  premio_cupom_tipo: "percentual" | "fixo" | "frete_gratis" | null; // quando premio_tipo = cupom
+  premio_cupom_valor: number | null;
+  // Validade (em dias) do cupom de prêmio gerado (0 = sem validade)
+  premio_validade_dias: number;
   ativo: boolean;
   criado_em: string | null;
 }
 
-export interface FidelidadeHistorico {
-  id: string;
-  user_id: string | null;
-  regra_id: string | null;
-  data: string | null;
-  premio_concedido: boolean;
-  observacao: string | null;
-}
+type FidEvento = { data: string; qtd: number };
 
-// Buscar todas as regras de fidelidade
+const mapRegra = (r: any): FidelidadeRegra => ({
+  id: r.id,
+  nome: r.nome,
+  descricao: r.descricao ?? null,
+  produto_requerido: r.produto_requerido ?? null,
+  quantidade_necessaria: Number(r.quantidade_necessaria ?? 1),
+  validade_dias: Number(r.validade_dias ?? 0),
+  premio_tipo: (r.premio_tipo as FidelidadeRegra["premio_tipo"]) ?? "cupom",
+  premio_produto: r.premio_produto ?? null,
+  premio_cupom_tipo: r.premio_cupom_tipo ?? null,
+  premio_cupom_valor: r.premio_cupom_valor != null ? Number(r.premio_cupom_valor) : null,
+  premio_validade_dias: Number(r.premio_validade_dias ?? 30),
+  ativo: r.ativo ?? true,
+  criado_em: r.criado_em ?? null,
+});
+
+type RegraInput = Omit<FidelidadeRegra, "id" | "criado_em">;
+
+const toRow = (regra: Partial<RegraInput>) => ({
+  nome: regra.nome,
+  descricao: regra.descricao,
+  produto_requerido: regra.produto_requerido as any,
+  quantidade_necessaria: regra.quantidade_necessaria,
+  validade_dias: regra.validade_dias,
+  premio_tipo: regra.premio_tipo,
+  premio_produto: regra.premio_produto as any,
+  premio_cupom_tipo: regra.premio_cupom_tipo,
+  premio_cupom_valor: regra.premio_cupom_valor,
+  premio_validade_dias: regra.premio_validade_dias,
+  ativo: regra.ativo,
+  // Mantém compatibilidade com colunas legadas
+  criterio: "quantidade_compras",
+  meta: regra.quantidade_necessaria ?? 1,
+});
+
+// ===== CRUD =====
 export const getFidelidadeRegras = async (): Promise<FidelidadeRegra[]> => {
   const { data, error } = await supabase
     .from("fidelidade_regras")
     .select("*")
     .order("criado_em", { ascending: false });
-
   if (error) {
     console.error("Erro ao buscar regras de fidelidade:", error);
     throw error;
   }
-
-  return (data || []).map((regra) => ({
-    ...regra,
-    criterio: regra.criterio as "quantidade_compras" | "valor_gasto",
-    premio_tipo: regra.premio_tipo as "cupom" | "produto",
-    ativo: regra.ativo ?? true,
-  }));
+  return (data || []).map(mapRegra);
 };
 
-// Buscar regras ativas
 export const getRegrasAtivas = async (): Promise<FidelidadeRegra[]> => {
   const { data, error } = await supabase
     .from("fidelidade_regras")
     .select("*")
     .eq("ativo", true);
-
   if (error) {
     console.error("Erro ao buscar regras ativas:", error);
     throw error;
   }
-
-  return (data || []).map((regra) => ({
-    ...regra,
-    criterio: regra.criterio as "quantidade_compras" | "valor_gasto",
-    premio_tipo: regra.premio_tipo as "cupom" | "produto",
-    ativo: regra.ativo ?? true,
-  }));
+  return (data || []).map(mapRegra);
 };
 
-// Criar nova regra
-export const createFidelidadeRegra = async (
-  regra: Omit<FidelidadeRegra, "id" | "criado_em">
-): Promise<FidelidadeRegra> => {
+export const createFidelidadeRegra = async (regra: RegraInput): Promise<FidelidadeRegra> => {
   const { data, error } = await supabase
     .from("fidelidade_regras")
-    .insert({
-      nome: regra.nome,
-      descricao: regra.descricao,
-      criterio: regra.criterio,
-      meta: regra.meta,
-      premio_tipo: regra.premio_tipo,
-      premio_id: regra.premio_id,
-      ativo: regra.ativo,
-    })
+    .insert(toRow(regra) as any)
     .select()
     .single();
-
   if (error) {
     console.error("Erro ao criar regra de fidelidade:", error);
     throw error;
   }
-
-  return {
-    ...data,
-    criterio: data.criterio as "quantidade_compras" | "valor_gasto",
-    premio_tipo: data.premio_tipo as "cupom" | "produto",
-    ativo: data.ativo ?? true,
-  };
+  return mapRegra(data);
 };
 
-// Atualizar regra
 export const updateFidelidadeRegra = async (
   id: string,
-  regra: Partial<FidelidadeRegra>
+  regra: Partial<RegraInput>
 ): Promise<FidelidadeRegra> => {
   const { data, error } = await supabase
     .from("fidelidade_regras")
-    .update({
-      nome: regra.nome,
-      descricao: regra.descricao,
-      criterio: regra.criterio,
-      meta: regra.meta,
-      premio_tipo: regra.premio_tipo,
-      premio_id: regra.premio_id,
-      ativo: regra.ativo,
-    })
+    .update(toRow(regra) as any)
     .eq("id", id)
     .select()
     .single();
-
   if (error) {
     console.error("Erro ao atualizar regra de fidelidade:", error);
     throw error;
   }
-
-  return {
-    ...data,
-    criterio: data.criterio as "quantidade_compras" | "valor_gasto",
-    premio_tipo: data.premio_tipo as "cupom" | "produto",
-    ativo: data.ativo ?? true,
-  };
+  return mapRegra(data);
 };
 
-// Excluir regra
 export const deleteFidelidadeRegra = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from("fidelidade_regras")
-    .delete()
-    .eq("id", id);
-
+  const { error } = await supabase.from("fidelidade_regras").delete().eq("id", id);
   if (error) {
     console.error("Erro ao excluir regra de fidelidade:", error);
     throw error;
   }
 };
 
-// Verificar se um item é pizza de 8+ pedaços (elegível para fidelidade)
-export const isPizzaElegivel = (item: any): boolean => {
-  const nomeLower = String(item?.name ?? item?.nome ?? "").toLowerCase();
-  const descLower = String(item?.description ?? item?.descricao ?? "").toLowerCase();
-  const tipoLower = String(item?.tipo ?? item?.type ?? "").toLowerCase();
+// ===== Lógica de verificação =====
 
-  // Estruturas possíveis:
-  // - Checkout/cart: item.selectedVariations[{ groupName, variations[{ name }] }]
-  // - Outros: item.variations / item.variacoes (legado)
-  const grupos =
-    item?.selectedVariations ?? item?.variations ?? item?.variacoes ?? ([] as any[]);
+const ehItemBrinde = (item: any): boolean => {
+  if (item?.isGift) return true;
+  const id = String(item?.menuItemId ?? item?.id ?? "");
+  if (id.startsWith("gift-")) return true;
+  const nome = String(item?.name ?? item?.nome ?? "");
+  return nome.trim().startsWith("🎁");
+};
 
-  let variacaoTexto = "";
+const getItemId = (item: any): string => String(item?.menuItemId ?? item?.id ?? "");
+const getItemQtd = (item: any): number => Number(item?.quantity ?? item?.quantidade ?? 1) || 1;
 
-  if (Array.isArray(grupos)) {
-    for (const grupo of grupos) {
-      const groupName = String(
-        grupo?.groupName ?? grupo?.group ?? grupo?.grupo ?? grupo?.name ?? ""
-      ).toLowerCase();
+// Constrói mapa: id do produto -> conjunto de categorias (principal + adicionais)
+const carregarMapaCategorias = async (): Promise<Map<string, Set<string>>> => {
+  const mapa = new Map<string, Set<string>>();
+  const { data } = await supabase
+    .from("menu_items")
+    .select("id, category, additional_categories");
+  (data || []).forEach((mi: any) => {
+    const set = new Set<string>();
+    if (mi.category) set.add(String(mi.category));
+    if (Array.isArray(mi.additional_categories)) {
+      mi.additional_categories.forEach((c: string) => c && set.add(String(c)));
+    }
+    mapa.set(String(mi.id), set);
+  });
+  return mapa;
+};
 
-      if (groupName) variacaoTexto += ` ${groupName}`;
+const categoriasDaRegra = (ref: ProdutoRefFid | null): string[] => {
+  if (!ref) return [];
+  if (ref.category_ids && ref.category_ids.length) return ref.category_ids;
+  if (ref.category_id) return [ref.category_id];
+  return [];
+};
 
-      // Dentro do grupo pode ser `variations` (Checkout) ou `options/opcoes` (legado)
-      const opcoes =
-        grupo?.variations ?? grupo?.options ?? grupo?.opcoes ?? ([] as any[]);
-
-      if (Array.isArray(opcoes)) {
-        for (const opcao of opcoes) {
-          const opcaoNome = String(opcao?.name ?? opcao?.nome ?? "").toLowerCase();
-          if (opcaoNome) variacaoTexto += ` ${opcaoNome}`;
-        }
-      }
+// Conta quantas unidades do PRODUTO exigido existem neste pedido
+const contarUnidadesQualificadas = (
+  regra: FidelidadeRegra,
+  itens: any[],
+  mapaCategorias: Map<string, Set<string>>
+): number => {
+  const ref = regra.produto_requerido;
+  if (!ref) return 0;
+  let total = 0;
+  for (const item of itens) {
+    if (ehItemBrinde(item)) continue;
+    const itemId = getItemId(item);
+    if (ref.tipo === "categoria") {
+      const cats = mapaCategorias.get(itemId) || new Set<string>();
+      const alvo = categoriasDaRegra(ref);
+      if (alvo.some((c) => cats.has(c))) total += getItemQtd(item);
+    } else {
+      if (itemId === ref.product_id) total += getItemQtd(item);
     }
   }
-
-  const textoCompleto = `${nomeLower} ${descLower} ${variacaoTexto}`;
-
-  // Verifica se é pizza
-  const isPizza = tipoLower === "pizza" || textoCompleto.includes("pizza");
-
-  // Verifica se tem 8 ou mais pedaços
-  const tem8OuMais = /grande|gigante|\b8\s*(pedaços|pedacos|fatias)|\b12\s*(pedaços|pedacos|fatias)/.test(
-    textoCompleto
-  );
-
-  console.log(`🍕 Verificando item: ${item?.name || item?.nome || "(sem nome)"}`,
-    { isPizza, tem8OuMais, textoCompleto }
-  );
-
-  return isPizza && tem8OuMais;
+  return total;
 };
 
-// Buscar ou criar progresso do cliente
-export const getClienteProgresso = async (
-  phone: string
-): Promise<{ contagem: number; valorGasto: number }> => {
-  const { data, error } = await supabase
-    .from("fidelidade_progresso")
-    .select("contagem_pizzas, valor_gasto_pizzas")
-    .eq("telefone_cliente", phone)
-    .maybeSingle();
+// Gera código único de cupom de fidelidade
+const gerarCodigoCupom = (): string => {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return `FID-${code}`;
+};
 
-  if (error) {
-    console.error("Erro ao buscar progresso:", error);
-    return { contagem: 0, valorGasto: 0 };
-  }
+// Cria o cupom de prêmio na tabela de cupons e devolve o código
+const criarCupomPremio = async (
+  regra: FidelidadeRegra
+): Promise<{ codigo: string; descricaoPremio: string } | null> => {
+  const hoje = new Date();
+  const inicio = hoje.toISOString().slice(0, 10);
+  const validade = regra.premio_validade_dias && regra.premio_validade_dias > 0
+    ? regra.premio_validade_dias
+    : 3650; // ~10 anos = "sem validade"
+  const fim = new Date(hoje.getTime() + validade * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
 
-  return {
-    contagem: data?.contagem_pizzas || 0,
-    valorGasto: data?.valor_gasto_pizzas || 0,
+  const codigo = gerarCodigoCupom();
+  const base: any = {
+    nome: codigo,
+    descricao: `Recompensa de fidelidade: ${regra.nome}`,
+    data_inicio: inicio,
+    data_fim: fim,
+    limite_uso: 1,
+    usos_por_usuario: 1,
+    ativo: true,
+    origem: "fidelidade",
+    valor: 0,
   };
-};
 
-// Atualizar progresso do cliente
-export const atualizarProgresso = async (
-  phone: string,
-  nome: string,
-  pizzasNovas: number,
-  valorNovas: number
-): Promise<void> => {
-  const { data: existing } = await supabase
-    .from("fidelidade_progresso")
-    .select("id, contagem_pizzas, valor_gasto_pizzas")
-    .eq("telefone_cliente", phone)
-    .maybeSingle();
+  let descricaoPremio = "";
 
-  if (existing) {
-    await supabase
-      .from("fidelidade_progresso")
-      .update({
-        contagem_pizzas: existing.contagem_pizzas + pizzasNovas,
-        valor_gasto_pizzas: Number(existing.valor_gasto_pizzas) + valorNovas,
-        nome_cliente: nome,
-        ultima_atualizacao: new Date().toISOString(),
-      })
-      .eq("id", existing.id);
+  if (regra.premio_tipo === "cupom") {
+    base.tipo = regra.premio_cupom_tipo || "percentual";
+    base.valor = regra.premio_cupom_valor || 0;
+    descricaoPremio =
+      base.tipo === "frete_gratis"
+        ? "Frete grátis"
+        : base.tipo === "percentual"
+        ? `${base.valor}% de desconto`
+        : `R$ ${Number(base.valor).toFixed(2)} de desconto`;
+  } else if (regra.premio_tipo === "produto") {
+    const ref = regra.premio_produto;
+    base.tipo = "compre_e_ganhe";
+    base.produtos_requeridos = [];
+    base.produto_brinde = {
+      tipo: "produto",
+      modo: "fixo",
+      product_id: ref?.product_id || "",
+      product_name: ref?.product_name || "",
+      quantidade: 1,
+    };
+    descricaoPremio = `Brinde: ${ref?.product_name || "produto"}`;
   } else {
-    await supabase.from("fidelidade_progresso").insert({
-      telefone_cliente: phone,
-      nome_cliente: nome,
-      contagem_pizzas: pizzasNovas,
-      valor_gasto_pizzas: valorNovas,
-    });
-  }
-};
-
-// Ajustar progresso após atingir meta (mantém o excedente)
-export const ajustarProgressoAposMeta = async (
-  phone: string,
-  meta: number,
-  criterio: string
-): Promise<void> => {
-  const { data: existing } = await supabase
-    .from("fidelidade_progresso")
-    .select("id, contagem_pizzas, valor_gasto_pizzas")
-    .eq("telefone_cliente", phone)
-    .maybeSingle();
-
-  if (!existing) return;
-
-  let novaContagem = existing.contagem_pizzas;
-  let novoValor = Number(existing.valor_gasto_pizzas);
-
-  if (criterio === "quantidade_compras") {
-    // Ex: tinha 11 pizzas, meta 10 → fica 1
-    novaContagem = existing.contagem_pizzas % meta;
-  } else if (criterio === "valor_gasto") {
-    // Ex: gastou R$ 550, meta R$ 500 → fica R$ 50
-    novoValor = novoValor % meta;
+    // categoria: oferece todos os produtos da categoria como opções de brinde
+    const ref = regra.premio_produto;
+    const alvo = categoriasDaRegra(ref);
+    let opcoes: { product_id: string; product_name: string }[] = [];
+    if (alvo.length) {
+      const { data } = await supabase
+        .from("menu_items")
+        .select("id, name, category, additional_categories")
+        .eq("available", true);
+      opcoes = (data || [])
+        .filter((mi: any) => {
+          const cats = new Set<string>();
+          if (mi.category) cats.add(String(mi.category));
+          if (Array.isArray(mi.additional_categories))
+            mi.additional_categories.forEach((c: string) => c && cats.add(String(c)));
+          return alvo.some((c) => cats.has(c));
+        })
+        .map((mi: any) => ({ product_id: String(mi.id), product_name: mi.name }));
+    }
+    base.tipo = "compre_e_ganhe";
+    base.produtos_requeridos = [];
+    base.produto_brinde = {
+      tipo: "categoria",
+      modo: "escolha",
+      product_id: "",
+      product_name: "",
+      quantidade: 1,
+      opcoes,
+    };
+    descricaoPremio = `Brinde à escolha (${ref?.category_names?.[0] || ref?.category_name || "categoria"})`;
   }
 
-  await supabase
-    .from("fidelidade_progresso")
-    .update({
-      contagem_pizzas: novaContagem,
-      valor_gasto_pizzas: novoValor,
-      ultima_atualizacao: new Date().toISOString(),
-    })
-    .eq("id", existing.id);
-
-  console.log(`🔄 Progresso ajustado: ${existing.contagem_pizzas} → ${novaContagem} pizzas, R$ ${existing.valor_gasto_pizzas} → R$ ${novoValor}`);
+  const { error } = await supabase.from("cupons" as any).insert([base]);
+  if (error) {
+    console.error("Erro ao criar cupom de prêmio:", error);
+    return null;
+  }
+  return { codigo, descricaoPremio };
 };
 
-// Verificar fidelidade e disparar webhook se atingir meta
+const getWebhookFidelidade = async (): Promise<string> => {
+  try {
+    const { data } = await supabase
+      .from("configuracoes")
+      .select("valor")
+      .eq("chave", "webhook_fidelidade")
+      .maybeSingle();
+    if (data?.valor && data.valor.trim()) return data.valor.trim();
+  } catch (e) {
+    console.error("Erro ao buscar webhook de fidelidade:", e);
+  }
+  return "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/fidelidade_Aut5";
+};
+
+// Verifica fidelidade ao concluir um pedido (chamado na transição para "entregue")
 export const verificarFidelidade = async (
   customerName: string,
   customerPhone: string,
   itens: any[]
 ): Promise<void> => {
   try {
-    console.log("🔍 [FIDELIDADE] Itens recebidos:", JSON.stringify(itens, null, 2));
-    
-    // Filtrar apenas pizzas de 8+ pedaços
-    const pizzasElegiveis = itens.filter(isPizzaElegivel);
-    
-    if (pizzasElegiveis.length === 0) {
-      console.log("Nenhuma pizza elegível para fidelidade neste pedido");
-      return;
-    }
+    if (!customerPhone || !Array.isArray(itens) || itens.length === 0) return;
 
-    console.log("🍕 [FIDELIDADE] Pizzas elegíveis:", pizzasElegiveis.map(p => ({
-      name: p.name || p.nome,
-      quantity: p.quantity,
-      price: p.price || p.preco,
-      subtotal: p.subtotal
-    })));
+    const regras = await getRegrasAtivas();
+    if (regras.length === 0) return;
 
-    const quantidadePizzas = pizzasElegiveis.reduce(
-      (acc, item) => {
-        const qty = Number(item.quantity) || 1;
-        console.log(`  ➡️ Item "${item.name || item.nome}": quantity=${item.quantity} (parsed: ${qty})`);
-        return acc + qty;
-      },
-      0
-    );
+    const mapaCategorias = await carregarMapaCategorias();
+    const agora = new Date();
 
-    const valorPizzas = pizzasElegiveis.reduce((acc, item) => {
-      const subtotal = item?.subtotal;
-      if (typeof subtotal === "number") return acc + subtotal;
-      if (typeof subtotal === "string" && subtotal.trim() !== "" && !Number.isNaN(Number(subtotal))) {
-        return acc + Number(subtotal);
+    for (const regra of regras) {
+      const novas = contarUnidadesQualificadas(regra, itens, mapaCategorias);
+      if (novas <= 0) continue;
+
+      // Carrega progresso atual desta regra para o cliente
+      const { data: existing } = await supabase
+        .from("fidelidade_progresso")
+        .select("*")
+        .eq("telefone_cliente", customerPhone)
+        .eq("regra_id", regra.id as any)
+        .maybeSingle();
+
+      let eventos: FidEvento[] = Array.isArray((existing as any)?.eventos)
+        ? ((existing as any).eventos as FidEvento[])
+        : [];
+
+      // Adiciona a compra atual
+      eventos.push({ data: agora.toISOString(), qtd: novas });
+
+      // Remove compras fora da janela Y (se houver validade)
+      if (regra.validade_dias && regra.validade_dias > 0) {
+        const limite = agora.getTime() - regra.validade_dias * 24 * 60 * 60 * 1000;
+        eventos = eventos.filter((ev) => new Date(ev.data).getTime() >= limite);
       }
 
-      const preco = item.price || item.preco || 0;
-      const qtd = Number(item.quantity) || 1;
-      return acc + preco * qtd;
-    }, 0);
+      let total = eventos.reduce((s, ev) => s + (Number(ev.qtd) || 0), 0);
+      let premioConcedido = false;
 
-    console.log(`🍕 [FIDELIDADE] Total: ${quantidadePizzas} pizzas, R$ ${valorPizzas}`);
+      // Atingiu a meta?
+      if (total >= regra.quantidade_necessaria) {
+        const premio = await criarCupomPremio(regra);
+        if (premio) {
+          premioConcedido = true;
+          // Reinicia o ciclo do zero
+          eventos = [];
+          total = 0;
 
-    // Atualizar progresso
-    await atualizarProgresso(customerPhone, customerName, quantidadePizzas, valorPizzas);
+          // Registra histórico (exibido em "Meus Pedidos")
+          await supabase.from("fidelidade_historico").insert({
+            regra_id: regra.id,
+            telefone_cliente: customerPhone,
+            nome_cliente: customerName,
+            cupom_codigo: premio.codigo,
+            premio_descricao: premio.descricaoPremio,
+            premio_concedido: true,
+            observacao: `Cupom ${premio.codigo} — ${premio.descricaoPremio}`,
+          } as any);
 
-    // Buscar progresso atualizado
-    const progresso = await getClienteProgresso(customerPhone);
-    
-    // Buscar regras ativas
-    const regrasAtivas = await getRegrasAtivas();
-
-    for (const regra of regrasAtivas) {
-      let atingiuMeta = false;
-
-      if (regra.criterio === "quantidade_compras" && progresso.contagem >= regra.meta) {
-        atingiuMeta = true;
-      } else if (regra.criterio === "valor_gasto" && progresso.valorGasto >= regra.meta) {
-        atingiuMeta = true;
-      }
-
-      if (atingiuMeta) {
-        console.log(`🎉 Cliente ${customerName} atingiu meta da regra: ${regra.nome}`);
-
-        // Disparar webhook
-        const payload = {
-          cliente: {
-            nome: customerName,
-            whatsapp: customerPhone,
-          },
-          regra: {
-            id: regra.id,
-            nome: regra.nome,
-            criterio: regra.criterio,
-            meta: regra.meta,
-            premio_tipo: regra.premio_tipo,
-          },
-          progresso: {
-            contagem_pizzas: progresso.contagem,
-            valor_gasto_pizzas: progresso.valorGasto,
-          },
-          timestamp: new Date().toISOString(),
-        };
-
-        try {
-          const { withComunicacaoMeta } = await import("@/utils/webhookPayload");
-          const enriched = await withComunicacaoMeta(payload);
-          const response = await fetch(
-            "https://n8n-n8n-start.yh11mi.easypanel.host/webhook/fidelidade_Aut5",
-            {
+          // Dispara webhook
+          try {
+            const url = await getWebhookFidelidade();
+            const payload = {
+              cliente: { nome: customerName, whatsapp: customerPhone },
+              regra: {
+                id: regra.id,
+                nome: regra.nome,
+                quantidade_necessaria: regra.quantidade_necessaria,
+                validade_dias: regra.validade_dias,
+                premio_tipo: regra.premio_tipo,
+              },
+              premio: {
+                descricao: premio.descricaoPremio,
+                cupom_codigo: premio.codigo,
+              },
+              timestamp: agora.toISOString(),
+            };
+            const { withComunicacaoMeta } = await import("@/utils/webhookPayload");
+            const enriched = await withComunicacaoMeta(payload);
+            await fetch(url, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(enriched),
-            }
-          );
-
-          if (response.ok) {
-            console.log("✅ Webhook de fidelidade enviado com sucesso!");
-            // Ajustar progresso mantendo o excedente
-            await ajustarProgressoAposMeta(customerPhone, regra.meta, regra.criterio);
-          } else {
-            console.error("❌ Falha ao enviar webhook:", await response.text());
+            });
+          } catch (whErr) {
+            console.error("Erro ao enviar webhook de fidelidade:", whErr);
           }
-        } catch (webhookError) {
-          console.error("❌ Erro ao enviar webhook de fidelidade:", webhookError);
         }
-        
-        // Sair após processar primeira meta atingida
-        break;
+      }
+
+      // Persiste progresso
+      if (existing) {
+        await supabase
+          .from("fidelidade_progresso")
+          .update({
+            nome_cliente: customerName,
+            contagem_pizzas: total,
+            eventos: eventos as any,
+            ultima_atualizacao: agora.toISOString(),
+          })
+          .eq("id", (existing as any).id);
+      } else {
+        await supabase.from("fidelidade_progresso").insert({
+          telefone_cliente: customerPhone,
+          nome_cliente: customerName,
+          regra_id: regra.id,
+          contagem_pizzas: total,
+          eventos: eventos as any,
+        } as any);
+      }
+
+      if (premioConcedido) {
+        console.log(`🎉 Prêmio de fidelidade concedido (${regra.nome}) para ${customerPhone}`);
       }
     }
   } catch (error) {
     console.error("Erro ao verificar fidelidade:", error);
   }
+};
+
+// Recompensas de fidelidade do cliente (para exibir em "Meus Pedidos")
+export interface FidelidadeRecompensa {
+  id: string;
+  cupom_codigo: string | null;
+  premio_descricao: string | null;
+  data: string | null;
+  resgatado: boolean;
+}
+
+export const getRecompensasCliente = async (
+  phones: string[]
+): Promise<FidelidadeRecompensa[]> => {
+  if (!phones.length) return [];
+  const { data, error } = await supabase
+    .from("fidelidade_historico")
+    .select("id, cupom_codigo, premio_descricao, data, resgatado")
+    .in("telefone_cliente", phones as any)
+    .eq("premio_concedido", true)
+    .order("data", { ascending: false });
+  if (error) {
+    console.error("Erro ao buscar recompensas do cliente:", error);
+    return [];
+  }
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    cupom_codigo: r.cupom_codigo ?? null,
+    premio_descricao: r.premio_descricao ?? null,
+    data: r.data ?? null,
+    resgatado: r.resgatado ?? false,
+  }));
 };
