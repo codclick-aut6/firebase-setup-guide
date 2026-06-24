@@ -191,8 +191,8 @@ const CouponField: React.FC = () => {
       const elegiveis = cartItems.filter((i: any) => !i?.__couponGiftId);
       const reqsAtendidos =
         cupomData.tipo !== "compre_e_ganhe" ||
-        (reqs.length > 0 &&
-          reqs.every((req: any) => {
+        reqs.length === 0 ||
+        reqs.every((req: any) => {
             const ehCategoria = req.tipo === "categoria";
             const total = elegiveis
               .filter((i: any) =>
@@ -202,7 +202,7 @@ const CouponField: React.FC = () => {
               )
               .reduce((s: number, i: any) => s + (i.quantity || 0), 0);
             return total >= req.quantidade;
-          }));
+          });
       if (reqsAtendidos) {
         toast({ title: "Cupom aplicado!", description: `Cupom aplicado: ${descricaoDesconto}` });
       } else {
