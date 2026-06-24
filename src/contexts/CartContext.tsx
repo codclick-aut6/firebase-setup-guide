@@ -326,7 +326,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     items: CartItem[],
     requeridos: ProdutoRef[]
   ): number => {
-    if (!requeridos?.length) return 0;
+    // Sem requisitos = brinde direto (prêmio de fidelidade): 1 ciclo
+    if (!requeridos?.length) return 1;
     const elegiveis = items.filter((i) => !isGiftItem(i));
     let menorCiclo = Infinity;
     for (const req of requeridos) {
