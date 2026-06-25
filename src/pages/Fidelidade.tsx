@@ -31,7 +31,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, Pencil, Trash2, Gift } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Gift, ChevronDown } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   FidelidadeRegra,
   ProdutoRefFid,
@@ -49,12 +50,12 @@ type FormData = {
   descricao: string;
   produto_tipo: "produto" | "categoria";
   produto_id: string;
-  categoria_id: string;
+  categoria_ids: string[];
   quantidade_necessaria: number;
   validade_dias: number;
   premio_tipo: "produto" | "categoria" | "cupom";
   premio_produto_id: string;
-  premio_categoria_id: string;
+  premio_categoria_ids: string[];
   premio_cupom_tipo: "percentual" | "fixo" | "frete_gratis";
   premio_cupom_valor: number;
   premio_validade_dias: number;
@@ -66,12 +67,12 @@ const emptyForm: FormData = {
   descricao: "",
   produto_tipo: "produto",
   produto_id: "",
-  categoria_id: "",
+  categoria_ids: [],
   quantidade_necessaria: 1,
   validade_dias: 0,
   premio_tipo: "cupom",
   premio_produto_id: "",
-  premio_categoria_id: "",
+  premio_categoria_ids: [],
   premio_cupom_tipo: "percentual",
   premio_cupom_valor: 10,
   premio_validade_dias: 30,
@@ -92,6 +93,18 @@ const Fidelidade = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [regraToDelete, setRegraToDelete] = useState<FidelidadeRegra | null>(null);
   const [formData, setFormData] = useState<FormData>(emptyForm);
+  const [produtoCatDropdownAberto, setProdutoCatDropdownAberto] = useState(false);
+  const [premioCatDropdownAberto, setPremioCatDropdownAberto] = useState(false);
+
+  useEffect(() => {
+    if (!produtoCatDropdownAberto && !premioCatDropdownAberto) return;
+    const close = () => {
+      setProdutoCatDropdownAberto(false);
+      setPremioCatDropdownAberto(false);
+    };
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [produtoCatDropdownAberto, premioCatDropdownAberto]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -131,14 +144,22 @@ const Fidelidade = () => {
         descricao: regra.descricao || "",
         produto_tipo: regra.produto_requerido?.tipo || "produto",
         produto_id: regra.produto_requerido?.product_id || "",
-        categoria_id:
-          regra.produto_requerido?.category_ids?.[0] || regra.produto_requerido?.category_id || "",
+        categoria_ids:
+          regra.produto_requerido?.category_ids?.length
+            ? regra.produto_requerido.category_ids
+            : regra.produto_requerido?.category_id
+            ? [regra.produto_requerido.category_id]
+            : [],
         quantidade_necessaria: regra.quantidade_necessaria || 1,
         validade_dias: regra.validade_dias || 0,
         premio_tipo: regra.premio_tipo || "cupom",
         premio_produto_id: regra.premio_produto?.product_id || "",
-        premio_categoria_id:
-          regra.premio_produto?.category_ids?.[0] || regra.premio_produto?.category_id || "",
+        premio_categoria_ids:
+          regra.premio_produto?.category_ids?.length
+            ? regra.premio_produto.category_ids
+            : regra.premio_produto?.category_id
+            ? [regra.premio_produto.category_id]
+            : [],
         premio_cupom_tipo: (regra.premio_cupom_tipo as any) || "percentual",
         premio_cupom_valor: regra.premio_cupom_valor ?? 10,
         premio_validade_dias: regra.premio_validade_dias ?? 30,
@@ -154,15 +175,17 @@ const Fidelidade = () => {
   const montarProdutoRef = (
     tipo: "produto" | "categoria",
     produtoId: string,
-    categoriaId: string
+    categoriaIds: string[]
   ): ProdutoRefFid => {
     if (tipo === "categoria") {
+      const ids = categoriaIds || [];
+      const names = ids.map((id) => nomeCategoria(id));
       return {
         tipo: "categoria",
-        category_id: categoriaId,
-        category_name: nomeCategoria(categoriaId),
-        category_ids: categoriaId ? [categoriaId] : [],
-        category_names: categoriaId ? [nomeCategoria(categoriaId)] : [],
+        category_id: ids[0],
+        category_name: names[0],
+        category_ids: ids,
+        category_names: names,
       };
     }
     return { tipo: "produto", product_id: produtoId, product_name: nomeProduto(produtoId) };
@@ -177,7 +200,7 @@ const Fidelidade = () => {
       toast({ title: "Erro", description: "Selecione o produto exigido.", variant: "destructive" });
       return;
     }
-    if (formData.produto_tipo === "categoria" && !formData.categoria_id) {
+    if (formData.produto_tipo === "categoria" && formData.categoria_ids.length === 0) {
       toast({ title: "Erro", description: "Selecione a categoria exigida.", variant: "destructive" });
       return;
     }
@@ -189,7 +212,7 @@ const Fidelidade = () => {
       toast({ title: "Erro", description: "Selecione o produto do prêmio.", variant: "destructive" });
       return;
     }
-    if (formData.premio_tipo === "categoria" && !formData.premio_categoria_id) {
+    if (formData.premio_tipo === "categoria" && formData.premio_categoria_ids.length === 0) {
       toast({ title: "Erro", description: "Selecione a categoria do prêmio.", variant: "destructive" });
       return;
     }
@@ -205,14 +228,14 @@ const Fidelidade = () => {
     const produto_requerido = montarProdutoRef(
       formData.produto_tipo,
       formData.produto_id,
-      formData.categoria_id
+      formData.categoria_ids
     );
 
     let premio_produto: ProdutoRefFid | null = null;
     if (formData.premio_tipo === "produto") {
-      premio_produto = montarProdutoRef("produto", formData.premio_produto_id, "");
+      premio_produto = montarProdutoRef("produto", formData.premio_produto_id, []);
     } else if (formData.premio_tipo === "categoria") {
-      premio_produto = montarProdutoRef("categoria", "", formData.premio_categoria_id);
+      premio_produto = montarProdutoRef("categoria", "", formData.premio_categoria_ids);
     }
 
     const payload = {
@@ -275,8 +298,14 @@ const Fidelidade = () => {
 
   const descreverProduto = (ref: ProdutoRefFid | null): string => {
     if (!ref) return "—";
-    if (ref.tipo === "categoria")
-      return `Categoria: ${ref.category_names?.[0] || ref.category_name || "—"}`;
+    if (ref.tipo === "categoria") {
+      const names = ref.category_names?.length
+        ? ref.category_names
+        : ref.category_name
+        ? [ref.category_name]
+        : [];
+      return `Categoria: ${names.length ? names.join(", ") : "—"}`;
+    }
     return ref.product_name || "—";
   };
 
@@ -421,13 +450,13 @@ const Fidelidade = () => {
               <Select
                 value={formData.produto_tipo}
                 onValueChange={(v: "produto" | "categoria") =>
-                  setFormData({ ...formData, produto_tipo: v, produto_id: "", categoria_id: "" })
+                  setFormData({ ...formData, produto_tipo: v, produto_id: "", categoria_ids: [] })
                 }
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="produto">Produto específico</SelectItem>
-                  <SelectItem value="categoria">Qualquer item de uma categoria</SelectItem>
+                  <SelectItem value="categoria">Qualquer item de uma ou mais categorias</SelectItem>
                 </SelectContent>
               </Select>
               {formData.produto_tipo === "produto" ? (
@@ -443,17 +472,62 @@ const Fidelidade = () => {
                   </SelectContent>
                 </Select>
               ) : (
-                <Select
-                  value={formData.categoria_id}
-                  onValueChange={(v) => setFormData({ ...formData, categoria_id: v })}
-                >
-                  <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-between font-normal"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setProdutoCatDropdownAberto((a) => !a);
+                      setPremioCatDropdownAberto(false);
+                    }}
+                  >
+                    <span className="truncate text-left">
+                      {formData.categoria_ids.length > 0
+                        ? categories
+                            .filter((c) => formData.categoria_ids.includes(c.id))
+                            .map((c) => c.name)
+                            .join(", ")
+                        : "Selecione as categorias"}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
+                  </Button>
+                  {produtoCatDropdownAberto && (
+                    <div
+                      className="absolute left-0 top-full z-[100] mt-1 w-full max-h-64 overflow-auto rounded-md border bg-popover p-2 text-popover-foreground shadow-md"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {categories.length === 0 && (
+                        <div className="text-sm text-muted-foreground p-2">Nenhuma categoria disponível</div>
+                      )}
+                      {categories.map((cat) => {
+                        const checked = formData.categoria_ids.includes(cat.id);
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setFormData((prev) => ({
+                                ...prev,
+                                categoria_ids: checked
+                                  ? prev.categoria_ids.filter((id) => id !== cat.id)
+                                  : [...prev.categoria_ids, cat.id],
+                              }));
+                            }}
+                            className="w-full flex items-center gap-2 p-1 hover:bg-muted rounded cursor-pointer select-none text-left"
+                          >
+                            <Checkbox checked={checked} tabIndex={-1} className="pointer-events-none" />
+                            <span className="text-sm">{cat.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
@@ -514,17 +588,62 @@ const Fidelidade = () => {
               )}
 
               {formData.premio_tipo === "categoria" && (
-                <Select
-                  value={formData.premio_categoria_id}
-                  onValueChange={(v) => setFormData({ ...formData, premio_categoria_id: v })}
-                >
-                  <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-between font-normal"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setPremioCatDropdownAberto((a) => !a);
+                      setProdutoCatDropdownAberto(false);
+                    }}
+                  >
+                    <span className="truncate text-left">
+                      {formData.premio_categoria_ids.length > 0
+                        ? categories
+                            .filter((c) => formData.premio_categoria_ids.includes(c.id))
+                            .map((c) => c.name)
+                            .join(", ")
+                        : "Selecione as categorias"}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
+                  </Button>
+                  {premioCatDropdownAberto && (
+                    <div
+                      className="absolute left-0 top-full z-[100] mt-1 w-full max-h-64 overflow-auto rounded-md border bg-popover p-2 text-popover-foreground shadow-md"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {categories.length === 0 && (
+                        <div className="text-sm text-muted-foreground p-2">Nenhuma categoria disponível</div>
+                      )}
+                      {categories.map((cat) => {
+                        const checked = formData.premio_categoria_ids.includes(cat.id);
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setFormData((prev) => ({
+                                ...prev,
+                                premio_categoria_ids: checked
+                                  ? prev.premio_categoria_ids.filter((id) => id !== cat.id)
+                                  : [...prev.premio_categoria_ids, cat.id],
+                              }));
+                            }}
+                            className="w-full flex items-center gap-2 p-1 hover:bg-muted rounded cursor-pointer select-none text-left"
+                          >
+                            <Checkbox checked={checked} tabIndex={-1} className="pointer-events-none" />
+                            <span className="text-sm">{cat.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               )}
 
               {formData.premio_tipo === "cupom" && (
