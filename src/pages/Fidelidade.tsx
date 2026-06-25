@@ -154,8 +154,12 @@ const Fidelidade = () => {
         validade_dias: regra.validade_dias || 0,
         premio_tipo: regra.premio_tipo || "cupom",
         premio_produto_id: regra.premio_produto?.product_id || "",
-        premio_categoria_id:
-          regra.premio_produto?.category_ids?.[0] || regra.premio_produto?.category_id || "",
+        premio_categoria_ids:
+          regra.premio_produto?.category_ids?.length
+            ? regra.premio_produto.category_ids
+            : regra.premio_produto?.category_id
+            ? [regra.premio_produto.category_id]
+            : [],
         premio_cupom_tipo: (regra.premio_cupom_tipo as any) || "percentual",
         premio_cupom_valor: regra.premio_cupom_valor ?? 10,
         premio_validade_dias: regra.premio_validade_dias ?? 30,
