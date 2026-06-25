@@ -175,15 +175,17 @@ const Fidelidade = () => {
   const montarProdutoRef = (
     tipo: "produto" | "categoria",
     produtoId: string,
-    categoriaId: string
+    categoriaIds: string[]
   ): ProdutoRefFid => {
     if (tipo === "categoria") {
+      const ids = categoriaIds || [];
+      const names = ids.map((id) => nomeCategoria(id));
       return {
         tipo: "categoria",
-        category_id: categoriaId,
-        category_name: nomeCategoria(categoriaId),
-        category_ids: categoriaId ? [categoriaId] : [],
-        category_names: categoriaId ? [nomeCategoria(categoriaId)] : [],
+        category_id: ids[0],
+        category_name: names[0],
+        category_ids: ids,
+        category_names: names,
       };
     }
     return { tipo: "produto", product_id: produtoId, product_name: nomeProduto(produtoId) };
