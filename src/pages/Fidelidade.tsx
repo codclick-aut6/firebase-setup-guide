@@ -144,8 +144,12 @@ const Fidelidade = () => {
         descricao: regra.descricao || "",
         produto_tipo: regra.produto_requerido?.tipo || "produto",
         produto_id: regra.produto_requerido?.product_id || "",
-        categoria_id:
-          regra.produto_requerido?.category_ids?.[0] || regra.produto_requerido?.category_id || "",
+        categoria_ids:
+          regra.produto_requerido?.category_ids?.length
+            ? regra.produto_requerido.category_ids
+            : regra.produto_requerido?.category_id
+            ? [regra.produto_requerido.category_id]
+            : [],
         quantidade_necessaria: regra.quantidade_necessaria || 1,
         validade_dias: regra.validade_dias || 0,
         premio_tipo: regra.premio_tipo || "cupom",
