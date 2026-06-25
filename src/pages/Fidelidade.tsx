@@ -31,7 +31,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, Pencil, Trash2, Gift } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Gift, ChevronDown } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   FidelidadeRegra,
   ProdutoRefFid,
