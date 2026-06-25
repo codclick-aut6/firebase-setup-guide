@@ -228,14 +228,14 @@ const Fidelidade = () => {
     const produto_requerido = montarProdutoRef(
       formData.produto_tipo,
       formData.produto_id,
-      formData.categoria_id
+      formData.categoria_ids
     );
 
     let premio_produto: ProdutoRefFid | null = null;
     if (formData.premio_tipo === "produto") {
-      premio_produto = montarProdutoRef("produto", formData.premio_produto_id, "");
+      premio_produto = montarProdutoRef("produto", formData.premio_produto_id, []);
     } else if (formData.premio_tipo === "categoria") {
-      premio_produto = montarProdutoRef("categoria", "", formData.premio_categoria_id);
+      premio_produto = montarProdutoRef("categoria", "", formData.premio_categoria_ids);
     }
 
     const payload = {
