@@ -93,6 +93,18 @@ const Fidelidade = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [regraToDelete, setRegraToDelete] = useState<FidelidadeRegra | null>(null);
   const [formData, setFormData] = useState<FormData>(emptyForm);
+  const [produtoCatDropdownAberto, setProdutoCatDropdownAberto] = useState(false);
+  const [premioCatDropdownAberto, setPremioCatDropdownAberto] = useState(false);
+
+  useEffect(() => {
+    if (!produtoCatDropdownAberto && !premioCatDropdownAberto) return;
+    const close = () => {
+      setProdutoCatDropdownAberto(false);
+      setPremioCatDropdownAberto(false);
+    };
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [produtoCatDropdownAberto, premioCatDropdownAberto]);
 
   useEffect(() => {
     if (!currentUser) {
