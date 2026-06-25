@@ -588,17 +588,62 @@ const Fidelidade = () => {
               )}
 
               {formData.premio_tipo === "categoria" && (
-                <Select
-                  value={formData.premio_categoria_id}
-                  onValueChange={(v) => setFormData({ ...formData, premio_categoria_id: v })}
-                >
-                  <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-between font-normal"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setPremioCatDropdownAberto((a) => !a);
+                      setProdutoCatDropdownAberto(false);
+                    }}
+                  >
+                    <span className="truncate text-left">
+                      {formData.premio_categoria_ids.length > 0
+                        ? categories
+                            .filter((c) => formData.premio_categoria_ids.includes(c.id))
+                            .map((c) => c.name)
+                            .join(", ")
+                        : "Selecione as categorias"}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
+                  </Button>
+                  {premioCatDropdownAberto && (
+                    <div
+                      className="absolute left-0 top-full z-[100] mt-1 w-full max-h-64 overflow-auto rounded-md border bg-popover p-2 text-popover-foreground shadow-md"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {categories.length === 0 && (
+                        <div className="text-sm text-muted-foreground p-2">Nenhuma categoria disponível</div>
+                      )}
+                      {categories.map((cat) => {
+                        const checked = formData.premio_categoria_ids.includes(cat.id);
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setFormData((prev) => ({
+                                ...prev,
+                                premio_categoria_ids: checked
+                                  ? prev.premio_categoria_ids.filter((id) => id !== cat.id)
+                                  : [...prev.premio_categoria_ids, cat.id],
+                              }));
+                            }}
+                            className="w-full flex items-center gap-2 p-1 hover:bg-muted rounded cursor-pointer select-none text-left"
+                          >
+                            <Checkbox checked={checked} tabIndex={-1} className="pointer-events-none" />
+                            <span className="text-sm">{cat.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               )}
 
               {formData.premio_tipo === "cupom" && (
