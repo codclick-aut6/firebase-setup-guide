@@ -298,8 +298,14 @@ const Fidelidade = () => {
 
   const descreverProduto = (ref: ProdutoRefFid | null): string => {
     if (!ref) return "—";
-    if (ref.tipo === "categoria")
-      return `Categoria: ${ref.category_names?.[0] || ref.category_name || "—"}`;
+    if (ref.tipo === "categoria") {
+      const names = ref.category_names?.length
+        ? ref.category_names
+        : ref.category_name
+        ? [ref.category_name]
+        : [];
+      return `Categoria: ${names.length ? names.join(", ") : "—"}`;
+    }
     return ref.product_name || "—";
   };
 
