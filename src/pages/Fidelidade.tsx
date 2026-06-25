@@ -50,12 +50,12 @@ type FormData = {
   descricao: string;
   produto_tipo: "produto" | "categoria";
   produto_id: string;
-  categoria_id: string;
+  categoria_ids: string[];
   quantidade_necessaria: number;
   validade_dias: number;
   premio_tipo: "produto" | "categoria" | "cupom";
   premio_produto_id: string;
-  premio_categoria_id: string;
+  premio_categoria_ids: string[];
   premio_cupom_tipo: "percentual" | "fixo" | "frete_gratis";
   premio_cupom_valor: number;
   premio_validade_dias: number;
@@ -67,12 +67,12 @@ const emptyForm: FormData = {
   descricao: "",
   produto_tipo: "produto",
   produto_id: "",
-  categoria_id: "",
+  categoria_ids: [],
   quantidade_necessaria: 1,
   validade_dias: 0,
   premio_tipo: "cupom",
   premio_produto_id: "",
-  premio_categoria_id: "",
+  premio_categoria_ids: [],
   premio_cupom_tipo: "percentual",
   premio_cupom_valor: 10,
   premio_validade_dias: 30,
