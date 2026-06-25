@@ -200,7 +200,7 @@ const Fidelidade = () => {
       toast({ title: "Erro", description: "Selecione o produto exigido.", variant: "destructive" });
       return;
     }
-    if (formData.produto_tipo === "categoria" && !formData.categoria_id) {
+    if (formData.produto_tipo === "categoria" && formData.categoria_ids.length === 0) {
       toast({ title: "Erro", description: "Selecione a categoria exigida.", variant: "destructive" });
       return;
     }
