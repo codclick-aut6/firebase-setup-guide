@@ -56,26 +56,56 @@ Deno.serve(async (req) => {
     // 2. Incrementar usos
     const novosUsos = (cupom.usos || 0) + 1;
     const atingiuLimite = cupom.limite_uso && novosUsos >= cupom.limite_uso;
+    const ehFidelidade = cupom.origem === "fidelidade";
 
-    const updateData: Record<string, any> = { usos: novosUsos };
-    if (atingiuLimite) {
-      updateData.ativo = false;
+    // Cupons de fidelidade: quando usados, devem ser apagados (e o lembrete em "Meus Pedidos")
+    if (ehFidelidade && atingiuLimite) {
+      // Remove o lembrete/recompensa exibido em "Meus Pedidos"
+      const { error: histError } = await supabase
+        .from("fidelidade_historico")
+        .delete()
+        .eq("cupom_codigo", cupom.nome);
+      if (histError) {
+        console.error("[registrar-uso-cupom] Erro ao remover histórico de fidelidade:", histError);
+      } else {
+        console.log("[registrar-uso-cupom] Histórico de fidelidade removido para cupom:", cupom.nome);
+      }
+
+      // Apaga o próprio cupom da tabela de cupons (admin-cupons)
+      const { error: deleteError } = await supabase
+        .from("cupons")
+        .delete()
+        .eq("id", cupom_id);
+      if (deleteError) {
+        console.error("[registrar-uso-cupom] Erro ao apagar cupom de fidelidade:", deleteError);
+        return new Response(
+          JSON.stringify({ success: false, error: "Erro ao apagar cupom" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      console.log("[registrar-uso-cupom] Cupom de fidelidade apagado:", cupom.nome);
+    } else {
+      const updateData: Record<string, any> = { usos: novosUsos };
+      if (atingiuLimite) {
+        updateData.ativo = false;
+      }
+
+      const { error: updateError } = await supabase
+        .from("cupons")
+        .update(updateData)
+        .eq("id", cupom_id);
+
+      if (updateError) {
+        console.error("[registrar-uso-cupom] Erro ao atualizar cupom:", updateError);
+        return new Response(
+          JSON.stringify({ success: false, error: "Erro ao atualizar cupom" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log("[registrar-uso-cupom] Cupom atualizado - usos:", novosUsos, "atingiu limite:", atingiuLimite);
     }
 
-    const { error: updateError } = await supabase
-      .from("cupons")
-      .update(updateData)
-      .eq("id", cupom_id);
-
-    if (updateError) {
-      console.error("[registrar-uso-cupom] Erro ao atualizar cupom:", updateError);
-      return new Response(
-        JSON.stringify({ success: false, error: "Erro ao atualizar cupom" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log("[registrar-uso-cupom] Cupom atualizado - usos:", novosUsos, "atingiu limite:", atingiuLimite);
 
     // 3. Buscar user_id do Supabase se firebase_id foi fornecido
     let supabaseUserId: string | null = null;
