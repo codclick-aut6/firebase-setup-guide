@@ -1617,7 +1617,12 @@ const MarketingMetrics: React.FC = () => {
             selected={selectedMetric === "viewsPerVisit"}
             onClick={() => setSelectedMetric("viewsPerVisit")}
           />
-          <MetricCard label="Duração média por Visita" value="—" />
+          <MetricCard
+            label="Duração Média por Visita"
+            value={visits ? formatDuration(visits.averageVisitDurationSeconds) : "…"}
+            change={visitChange("averageVisitDurationSeconds")?.label ?? null}
+            isPositive={visitChange("averageVisitDurationSeconds")?.isPositive ?? true}
+          />
           <MetricCard label="Taxa de Rejeição" value="—" />
           <MetricCard label="Scroll to Goals:" value="—" />
         </div>

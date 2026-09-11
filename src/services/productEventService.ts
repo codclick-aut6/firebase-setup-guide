@@ -389,6 +389,8 @@ export interface VisitMetrics {
   pageViews: number;
   /** Média de visualizações por visita. */
   viewsPerVisit: number;
+  /** Duração média por sessão, limitada a 30 minutos, em segundos. */
+  averageVisitDurationSeconds: number;
 }
 
 /** Intervalo (ISO) já ajustado ao cutoff do funil. */
@@ -455,12 +457,26 @@ export const getVisitMetrics = async (
 ): Promise<VisitMetrics> => {
   const { startIso, endIso } = rangeIso(startDate, endDate);
 
-  const { data, error } = await supabase.rpc('mkt_visit_metrics' as any, {
+  const params = {
     p_start: startIso,
     p_end: endIso,
     p_source: utmSource ?? null,
     p_campaign: utmCampaign ?? null,
-  });
+  };
+
+  const [metricsResult, durationResult] = await Promise.all([
+    supabase.rpc('mkt_visit_metrics' as any, params),
+    supabase.rpc('mkt_avg_visit_duration' as any, params),
+  ]);
+
+  const { data, error } = metricsResult;
+  const averageVisitDurationSeconds = durationResult.error
+    ? 0
+    : Number(durationResult.data ?? 0);
+
+  if (durationResult.error) {
+    console.error('Error fetching average visit duration:', durationResult.error);
+  }
 
   const row = Array.isArray(data) ? (data as any[])[0] : (data as any);
 
@@ -473,6 +489,7 @@ export const getVisitMetrics = async (
       returningVisitors: 0,
       pageViews: 0,
       viewsPerVisit: 0,
+      averageVisitDurationSeconds: 0,
     };
   }
 
@@ -486,6 +503,7 @@ export const getVisitMetrics = async (
     returningVisitors: Number(row.returning_visitors ?? 0),
     pageViews,
     viewsPerVisit: totalVisits > 0 ? pageViews / totalVisits : 0,
+    averageVisitDurationSeconds,
   };
 };
 
