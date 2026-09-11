@@ -1262,6 +1262,15 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_super: { Args: { _uid: string }; Returns: boolean }
+      mkt_avg_visit_duration: {
+        Args: {
+          p_campaign?: string
+          p_end: string
+          p_source?: string
+          p_start: string
+        }
+        Returns: number
+      }
       mkt_daily_visit_metrics: {
         Args: {
           p_campaign?: string
