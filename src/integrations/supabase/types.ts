@@ -906,6 +906,7 @@ export type Database = {
       product_events: {
         Row: {
           category: string | null
+          channel: string | null
           cidade: string | null
           created_at: string
           event_type: string
@@ -915,6 +916,7 @@ export type Database = {
           product_id: string
           product_name: string
           quantity: number | null
+          referrer: string | null
           session_id: string | null
           utm_campaign: string | null
           utm_content: string | null
@@ -925,6 +927,7 @@ export type Database = {
         }
         Insert: {
           category?: string | null
+          channel?: string | null
           cidade?: string | null
           created_at?: string
           event_type: string
@@ -934,6 +937,7 @@ export type Database = {
           product_id: string
           product_name: string
           quantity?: number | null
+          referrer?: string | null
           session_id?: string | null
           utm_campaign?: string | null
           utm_content?: string | null
@@ -944,6 +948,7 @@ export type Database = {
         }
         Update: {
           category?: string | null
+          channel?: string | null
           cidade?: string | null
           created_at?: string
           event_type?: string
@@ -953,6 +958,7 @@ export type Database = {
           product_id?: string
           product_name?: string
           quantity?: number | null
+          referrer?: string | null
           session_id?: string | null
           utm_campaign?: string | null
           utm_content?: string | null
@@ -1318,6 +1324,22 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_super: { Args: { _uid: string }; Returns: boolean }
+      mkt_acquisition_breakdown: {
+        Args: {
+          p_campaign?: string
+          p_channel?: string
+          p_cidade?: string
+          p_end: string
+          p_source?: string
+          p_start: string
+        }
+        Returns: {
+          conversions: number
+          kind: string
+          sessions: number
+          value: string
+        }[]
+      }
       mkt_avg_visit_duration:
         | {
             Args: {
@@ -1401,16 +1423,28 @@ export type Database = {
         }
         Returns: Json
       }
-      mkt_unique_sessions: {
-        Args: {
-          p_campaign?: string
-          p_cidade?: string
-          p_end: string
-          p_source?: string
-          p_start: string
-        }
-        Returns: number
-      }
+      mkt_unique_sessions:
+        | {
+            Args: {
+              p_campaign?: string
+              p_cidade?: string
+              p_end: string
+              p_source?: string
+              p_start: string
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              p_campaign?: string
+              p_channel?: string
+              p_cidade?: string
+              p_end: string
+              p_source?: string
+              p_start: string
+            }
+            Returns: number
+          }
       mkt_utm_options: {
         Args: never
         Returns: {
@@ -1418,22 +1452,40 @@ export type Database = {
           value: string
         }[]
       }
-      mkt_visit_metrics: {
-        Args: {
-          p_campaign?: string
-          p_cidade?: string
-          p_end: string
-          p_source?: string
-          p_start: string
-        }
-        Returns: {
-          new_visitors: number
-          page_views: number
-          returning_visitors: number
-          total_visits: number
-          unique_visitors: number
-        }[]
-      }
+      mkt_visit_metrics:
+        | {
+            Args: {
+              p_campaign?: string
+              p_cidade?: string
+              p_end: string
+              p_source?: string
+              p_start: string
+            }
+            Returns: {
+              new_visitors: number
+              page_views: number
+              returning_visitors: number
+              total_visits: number
+              unique_visitors: number
+            }[]
+          }
+        | {
+            Args: {
+              p_campaign?: string
+              p_channel?: string
+              p_cidade?: string
+              p_end: string
+              p_source?: string
+              p_start: string
+            }
+            Returns: {
+              new_visitors: number
+              page_views: number
+              returning_visitors: number
+              total_visits: number
+              unique_visitors: number
+            }[]
+          }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "super-admin"
