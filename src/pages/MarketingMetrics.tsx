@@ -1293,7 +1293,7 @@ const MarketingMetrics: React.FC = () => {
 
             {/* Sales details modal */}
             <Dialog open={salesDetailsOpen} onOpenChange={setSalesDetailsOpen}>
-              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto border-0 bg-card text-card-foreground">
+              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-3xl w-[95vw] max-h-[90vh] overflow-y-auto border-0 bg-card text-card-foreground">
                 <DialogHeader className="relative border-b border-border p-6 pb-4">
                   <DialogTitle className="text-xl font-bold pr-10">Detalhamento de Vendas</DialogTitle>
                   <DialogDescription className="text-muted-foreground">
@@ -1310,7 +1310,7 @@ const MarketingMetrics: React.FC = () => {
                     <X className="h-5 w-5" />
                   </button>
                 </DialogHeader>
-                <div className="p-6 pt-2 space-y-6">
+                <div className="p-6 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-muted-foreground">Valor total das Vendas</p>
                     <p className="text-2xl font-bold tracking-tight">
@@ -1348,7 +1348,7 @@ const MarketingMetrics: React.FC = () => {
                       {salesSummary ? formatBRL(salesSummary.totalRevenue - salesSummary.totalCost) : "…"}
                     </p>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 sm:col-span-2">
                     <p className="text-sm font-semibold">Top 3 dias com mais vendas:</p>
                     {topSalesDays.length > 0 ? (
                       <ul className="space-y-1">
@@ -1362,7 +1362,7 @@ const MarketingMetrics: React.FC = () => {
                       <p className="text-xs text-muted-foreground">Sem vendas no período.</p>
                     )}
                   </div>
-                  <div className="pt-2 border-t border-border">
+                  <div className="pt-2 border-t border-border sm:col-span-2">
                     <button
                       type="button"
                       onClick={() => setSalesReportOpen(true)}
@@ -1377,7 +1377,7 @@ const MarketingMetrics: React.FC = () => {
 
             {/* Relatório Completo de Vendas */}
             <Dialog open={salesReportOpen} onOpenChange={setSalesReportOpen}>
-              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-2xl w-[95vw] max-h-[90vh] overflow-hidden border-0 bg-card text-card-foreground flex flex-col">
+              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-4xl w-[95vw] max-h-[90vh] overflow-hidden border-0 bg-card text-card-foreground flex flex-col">
                 <DialogHeader className="relative border-b border-border p-6 pb-4 shrink-0">
                   <DialogTitle className="text-xl font-bold pr-10">Relatório Completo</DialogTitle>
                   <DialogDescription className="text-muted-foreground">
@@ -1423,7 +1423,7 @@ const MarketingMetrics: React.FC = () => {
                   ) : !currentReportMonth || currentReportMonth.rows.length === 0 ? (
                     <p className="text-xs text-muted-foreground">Sem vendas no período.</p>
                   ) : (
-                    <ul className="divide-y divide-border">
+                    <ul className="divide-y divide-border sm:columns-2 sm:gap-10 [&>li]:break-inside-avoid">
                       {currentReportMonth.rows.map((row) => (
                         <li key={row.id} className="flex items-start justify-between gap-3 py-3">
                           <div className="min-w-0">
