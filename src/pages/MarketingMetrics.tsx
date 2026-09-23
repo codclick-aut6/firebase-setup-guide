@@ -1293,7 +1293,7 @@ const MarketingMetrics: React.FC = () => {
 
             {/* Sales details modal */}
             <Dialog open={salesDetailsOpen} onOpenChange={setSalesDetailsOpen}>
-              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto border-0 bg-card text-card-foreground">
+              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-3xl w-[95vw] max-h-[90vh] overflow-y-auto border-0 bg-card text-card-foreground">
                 <DialogHeader className="relative border-b border-border p-6 pb-4">
                   <DialogTitle className="text-xl font-bold pr-10">Detalhamento de Vendas</DialogTitle>
                   <DialogDescription className="text-muted-foreground">
@@ -1310,7 +1310,7 @@ const MarketingMetrics: React.FC = () => {
                     <X className="h-5 w-5" />
                   </button>
                 </DialogHeader>
-                <div className="p-6 pt-2 space-y-6">
+                <div className="p-6 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-muted-foreground">Valor total das Vendas</p>
                     <p className="text-2xl font-bold tracking-tight">
@@ -1348,7 +1348,7 @@ const MarketingMetrics: React.FC = () => {
                       {salesSummary ? formatBRL(salesSummary.totalRevenue - salesSummary.totalCost) : "…"}
                     </p>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 sm:col-span-2">
                     <p className="text-sm font-semibold">Top 3 dias com mais vendas:</p>
                     {topSalesDays.length > 0 ? (
                       <ul className="space-y-1">
@@ -1362,7 +1362,7 @@ const MarketingMetrics: React.FC = () => {
                       <p className="text-xs text-muted-foreground">Sem vendas no período.</p>
                     )}
                   </div>
-                  <div className="pt-2 border-t border-border">
+                  <div className="pt-2 border-t border-border sm:col-span-2">
                     <button
                       type="button"
                       onClick={() => setSalesReportOpen(true)}
@@ -1377,7 +1377,7 @@ const MarketingMetrics: React.FC = () => {
 
             {/* Relatório Completo de Vendas */}
             <Dialog open={salesReportOpen} onOpenChange={setSalesReportOpen}>
-              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-2xl w-[95vw] max-h-[90vh] overflow-hidden border-0 bg-card text-card-foreground flex flex-col">
+              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-4xl w-[95vw] max-h-[90vh] overflow-hidden border-0 bg-card text-card-foreground flex flex-col">
                 <DialogHeader className="relative border-b border-border p-6 pb-4 shrink-0">
                   <DialogTitle className="text-xl font-bold pr-10">Relatório Completo</DialogTitle>
                   <DialogDescription className="text-muted-foreground">
@@ -1423,7 +1423,7 @@ const MarketingMetrics: React.FC = () => {
                   ) : !currentReportMonth || currentReportMonth.rows.length === 0 ? (
                     <p className="text-xs text-muted-foreground">Sem vendas no período.</p>
                   ) : (
-                    <ul className="divide-y divide-border">
+                    <ul className="divide-y divide-border sm:columns-2 sm:gap-10 [&>li]:break-inside-avoid">
                       {currentReportMonth.rows.map((row) => (
                         <li key={row.id} className="flex items-start justify-between gap-3 py-3">
                           <div className="min-w-0">
@@ -1460,7 +1460,7 @@ const MarketingMetrics: React.FC = () => {
 
             {/* Detalhamento: Quantidade de Vendas */}
             <Dialog open={orderCountDetailsOpen} onOpenChange={setOrderCountDetailsOpen}>
-              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto border-0 bg-card text-card-foreground">
+              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto border-0 bg-card text-card-foreground">
                 <DialogHeader className="relative border-b border-border p-6 pb-4">
                   <DialogTitle className="text-xl font-bold pr-10">Detalhamento — Quantidade de Vendas</DialogTitle>
                   <DialogDescription className="text-muted-foreground">
@@ -1477,7 +1477,7 @@ const MarketingMetrics: React.FC = () => {
                     <X className="h-5 w-5" />
                   </button>
                 </DialogHeader>
-                <div className="p-6 pt-2 space-y-6">
+                <div className="p-6 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-muted-foreground">Quantidade total de pedidos</p>
                     <p className="text-2xl font-bold tracking-tight">
@@ -1522,7 +1522,7 @@ const MarketingMetrics: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="pt-2 border-t border-border">
+                  <div className="pt-2 border-t border-border sm:col-span-2">
                     <button
                       type="button"
                       onClick={() => setProductsReportOpen(true)}
@@ -1537,7 +1537,7 @@ const MarketingMetrics: React.FC = () => {
 
             {/* Relatório Completo de Produtos Vendidos */}
             <Dialog open={productsReportOpen} onOpenChange={setProductsReportOpen}>
-              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-2xl w-[95vw] max-h-[90vh] overflow-hidden border-0 bg-card text-card-foreground flex flex-col">
+              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-4xl w-[95vw] max-h-[90vh] overflow-hidden border-0 bg-card text-card-foreground flex flex-col">
                 <DialogHeader className="relative border-b border-border p-6 pb-4 shrink-0">
                   <DialogTitle className="text-xl font-bold pr-10">Relatório Completo</DialogTitle>
                   <DialogDescription className="text-muted-foreground">
@@ -1585,7 +1585,7 @@ const MarketingMetrics: React.FC = () => {
                   ) : !currentProductsMonth || currentProductsMonth.categories.length === 0 ? (
                     <p className="text-xs text-muted-foreground">Sem produtos vendidos no período.</p>
                   ) : (
-                    <div className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
                       {currentProductsMonth.categories.map((cat) => (
                         <div key={cat.category}>
                           <div className="sticky top-0 z-10 flex items-center justify-between gap-2 rounded-lg bg-muted/80 px-3 py-2 backdrop-blur-sm">
@@ -1753,7 +1753,7 @@ const MarketingMetrics: React.FC = () => {
 
             {/* Detalhamento — Top 5 produtos */}
             <Dialog open={productDetail !== null} onOpenChange={(open) => !open && setProductDetail(null)}>
-              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto border-0 bg-card text-card-foreground">
+              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto border-0 bg-card text-card-foreground">
                 <DialogHeader className="relative border-b border-border p-6 pb-4">
                   <DialogTitle className="text-xl font-bold pr-10">
                     {productDetail ? productMetricLabels[productDetail] : "Detalhamento"}
@@ -1772,7 +1772,7 @@ const MarketingMetrics: React.FC = () => {
                     <X className="h-5 w-5" />
                   </button>
                 </DialogHeader>
-                <div className="p-6 pt-4 space-y-3">
+                <div className="p-6 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
                   {productsLoading ? (
                     <p className="text-sm text-muted-foreground">Carregando…</p>
                   ) : (productDetail === "productSales"
@@ -1971,7 +1971,7 @@ const MarketingMetrics: React.FC = () => {
 
             {/* Detalhamento mockado do funil */}
             <Dialog open={funnelDetail !== null} onOpenChange={(open) => !open && setFunnelDetail(null)}>
-              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto border-0 bg-card text-card-foreground">
+              <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto border-0 bg-card text-card-foreground">
                 <DialogHeader className="relative border-b border-border p-6 pb-4">
                   <DialogTitle className="text-xl font-bold pr-10">
                     {funnelDetail ? funnelMetricLabels[funnelDetail] : "Detalhamento"}
@@ -1990,7 +1990,7 @@ const MarketingMetrics: React.FC = () => {
                     <X className="h-5 w-5" />
                   </button>
                 </DialogHeader>
-                <div className="p-6 pt-4 space-y-3">
+                <div className="p-6 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
                   {!funnel ? (
                     <p className="text-sm text-muted-foreground">Carregando…</p>
                   ) : funnelDetail === "abandonoCarrinho" ? (
@@ -2009,7 +2009,7 @@ const MarketingMetrics: React.FC = () => {
                           {abandonedLostValue === null ? "…" : formatBRL(abandonedLostValue)}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
+                      <div className="flex items-center justify-between border-t border-border pt-3 text-sm sm:col-span-2">
                         <span className="text-muted-foreground">Carrinhos abandonados</span>
                         <span className="font-bold text-destructive">
                           {Math.max(0, funnel.stages.addToCart - funnel.stages.beginCheckout).toLocaleString("pt-BR")} ({funnelCardValue("abandonoCarrinho")})
@@ -2026,7 +2026,7 @@ const MarketingMetrics: React.FC = () => {
                         <span className="text-muted-foreground">Pedidos finalizados</span>
                         <span className="font-semibold">{funnel.stages.purchases.toLocaleString("pt-BR")}</span>
                       </div>
-                      <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
+                      <div className="flex items-center justify-between border-t border-border pt-3 text-sm sm:col-span-2">
                         <span className="text-muted-foreground">Taxa de conversão</span>
                         <span className="font-bold text-food-green">
                           {funnelCardValue("taxaConversao")}
@@ -2053,7 +2053,7 @@ const MarketingMetrics: React.FC = () => {
                           {checkoutLostValue === null ? "…" : formatBRL(checkoutLostValue)}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
+                      <div className="flex items-center justify-between border-t border-border pt-3 text-sm sm:col-span-2">
                         <span className="text-muted-foreground">Desistências no checkout</span>
                         <span className="font-bold text-destructive">
                           {Math.max(0, funnel.stages.beginCheckout - funnel.stages.purchases).toLocaleString("pt-BR")} ({funnelCardValue("desistenciaCheckout")})
@@ -2212,7 +2212,7 @@ const MarketingMetrics: React.FC = () => {
 
         {/* Modal — detalhamento da Taxa de Rejeição */}
         <Dialog open={bounceDetailsOpen} onOpenChange={setBounceDetailsOpen}>
-          <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto border-0 bg-card text-card-foreground">
+          <DialogContent className="[&>button]:hidden max-sm:fixed max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:max-w-none max-sm:h-screen max-sm:rounded-none max-sm:p-0 sm:max-w-3xl w-[95vw] max-h-[90vh] overflow-y-auto border-0 bg-card text-card-foreground">
             <DialogHeader className="relative border-b border-border p-6 pb-4">
               <DialogTitle className="text-xl font-bold pr-10">Detalhamento — Taxa de Rejeição</DialogTitle>
               <DialogDescription className="text-muted-foreground">
@@ -2228,7 +2228,7 @@ const MarketingMetrics: React.FC = () => {
               </button>
             </DialogHeader>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 grid gap-4 sm:grid-cols-3">
               <div className="rounded-lg bg-muted/40 p-4">
                 <p className="text-sm text-muted-foreground">Taxa de rejeição</p>
                 <p className="text-2xl font-bold">
@@ -2240,18 +2240,15 @@ const MarketingMetrics: React.FC = () => {
                     : ""}
                 </p>
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg bg-muted/40 p-4">
-                  <p className="text-sm text-muted-foreground">Visitas novas</p>
-                  <p className="text-xl font-bold">{bounce ? formatNumber(bounce.bouncedNew) : "…"}</p>
-                </div>
-                <div className="rounded-lg bg-muted/40 p-4">
-                  <p className="text-sm text-muted-foreground">Visitas recorrentes</p>
-                  <p className="text-xl font-bold">
-                    {bounce ? formatNumber(bounce.bouncedReturning) : "…"}
-                  </p>
-                </div>
+              <div className="rounded-lg bg-muted/40 p-4">
+                <p className="text-sm text-muted-foreground">Visitas novas</p>
+                <p className="text-xl font-bold">{bounce ? formatNumber(bounce.bouncedNew) : "…"}</p>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-4">
+                <p className="text-sm text-muted-foreground">Visitas recorrentes</p>
+                <p className="text-xl font-bold">
+                  {bounce ? formatNumber(bounce.bouncedReturning) : "…"}
+                </p>
               </div>
             </div>
           </DialogContent>
