@@ -617,6 +617,8 @@ export const fetchUniqueSessions = async (
         p_end: endIso,
         p_source: sourceFilter ?? null,
         p_campaign: campaignFilter ?? null,
+        p_cidade: null,
+        p_channel: null,
       });
       if (error) throw new Error(error.message);
       return Number(data ?? 0);
