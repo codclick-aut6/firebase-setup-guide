@@ -471,7 +471,8 @@ export const getVisitMetrics = async (
   };
 
   const [metricsResult, durationResult] = await Promise.all([
-    supabase.rpc('mkt_visit_metrics' as any, params),
+    // p_channel explícito evita ambiguidade entre as versões da função
+    supabase.rpc('mkt_visit_metrics' as any, { ...params, p_channel: null }),
     supabase.rpc('mkt_avg_visit_duration' as any, params),
   ]);
 
