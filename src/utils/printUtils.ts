@@ -437,3 +437,13 @@ export const printOrder = (order: Order) => {
     cleanup();
   }
 };
+
+/** Imprime garantindo que cada item tenha a categoria resolvida (inclusive pedidos antigos). */
+export const printOrderWithCategories = async (order: Order) => {
+  try {
+    const enriched = await enrichOrderWithCategories(order);
+    printOrder(enriched);
+  } catch {
+    printOrder(order);
+  }
+};
