@@ -145,6 +145,7 @@ export const createOrder = async (
         name: item.name,
         price: baseUnitPrice,
         quantity: itemQty,
+        category: (item as any).category ?? null,
         itemObservation: item.itemObservation || undefined,
         selectedVariations: processedVariations,
         priceFrom: item.priceFrom || false,
