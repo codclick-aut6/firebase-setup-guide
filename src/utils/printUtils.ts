@@ -328,7 +328,8 @@ export const printOrder = (order: Order) => {
             ${item.itemObservation ? `<div class="sub-row" style="margin-top:3px;"><span><strong>Observação:</strong> ${item.itemObservation}</span></div>` : ''}
           </div>
         `;
-      }).join('')}
+        }).join('')}
+      `).join('')}
 
 
       <!-- RESUMO FINANCEIRO -->
