@@ -1,4 +1,5 @@
 import { Order, OrderItem, SelectedVariationGroup } from "@/types/order";
+import { groupOrderItemsByCategory, enrichOrderWithCategories } from "@/utils/orderItemCategories";
 
 type PrintableVariation = {
   name?: string;
@@ -140,6 +141,17 @@ export const printOrder = (order: Order) => {
           border-bottom: 1px solid #000;
           padding: 3px 0;
           font-weight: bold;
+        }
+
+        .category-title {
+          margin-top: 6px;
+          padding: 3px 0;
+          font-weight: bold;
+          font-size: 12px;
+          text-transform: uppercase;
+          text-align: center;
+          border-top: 1px solid #000;
+          border-bottom: 1px solid #000;
         }
 
         .item-block {
