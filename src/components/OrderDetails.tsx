@@ -271,10 +271,10 @@ const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: 
           .eq("chave", "auto_print_on_accept")
           .maybeSingle();
         const enabled = !data || data.valor !== "false";
-        if (enabled) printOrder(order);
+        if (enabled) printOrderWithCategories(order);
       } catch (e) {
         console.error("Erro ao verificar config de impressão:", e);
-        printOrder(order);
+        printOrderWithCategories(order);
       }
     }
     const updatedOrder: Order & { cancellationReason?: string } = { ...order, status };
@@ -507,7 +507,7 @@ const sendOrderStatusWebhook = async (orderData: Order & { cancellationReason?: 
             <Button
               variant="outline"
               className="flex items-center gap-1"
-              onClick={() => printOrder(order)}
+              onClick={() => printOrderWithCategories(order)}
             >
               <Printer className="h-5 w-5" />
               Imprimir

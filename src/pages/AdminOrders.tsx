@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { updateOrder, getOrdersByDateRange, getOrderById } from "@/services/orderService";
 import OrderDetails from "@/components/OrderDetails";
-import { printOrder } from "@/utils/printUtils";
+import { printOrderWithCategories } from "@/utils/printUtils";
 
 const PRINTED_ORDERS_KEY = "auto_printed_order_ids";
 const getPrintedIds = (): Set<string> => {
@@ -219,7 +219,7 @@ const AdminOrders = () => {
                 // Auto-impressão (se habilitada em Configurações)
                 if (autoPrintNewOrderRef.current) {
                   getOrderById(row.id)
-                    .then((full) => { if (full) printOrder(full); })
+                    .then((full) => { if (full) printOrderWithCategories(full); })
                     .catch((e) => console.error("Erro ao imprimir pedido automaticamente:", e));
                 }
               }
