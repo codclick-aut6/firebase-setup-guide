@@ -33,7 +33,8 @@ import {
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { getNextStatusOptions, hasReceivedPayment } from "@/services/orderStatusService";
-import { printOrder } from "@/utils/printUtils";
+import { printOrder, printOrderWithCategories } from "@/utils/printUtils";
+import { enrichOrderWithCategories, groupOrderItemsByCategory } from "@/utils/orderItemCategories";
 
 // 🟢 Import do Supabase client
 import { supabase } from "@/integrations/supabase/client";
@@ -55,6 +56,18 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onUpdateStatus, onCl
   const [isReasonDialogOpen, setIsReasonDialogOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
   const [isDeliveredConfirmOpen, setIsDeliveredConfirmOpen] = useState(false);
+
+  // Itens com categoria resolvida (inclui pedidos antigos sem categoria salva)
+  const [displayItems, setDisplayItems] = useState(order.items ?? []);
+  useEffect(() => {
+    let active = true;
+    setDisplayItems(order.items ?? []);
+    enrichOrderWithCategories(order)
+      .then((enriched) => { if (active) setDisplayItems(enriched.items ?? []); })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [order]);
+  const itemGroups = groupOrderItemsByCategory(displayItems);
 
   // 🟢 Código curto exibido ao admin — mesmo padrão salvo em codigo_curto (primeiros 6 caracteres do ID)
   const shortCode = order?.id ? String(order.id).substring(0, 6) : null;
