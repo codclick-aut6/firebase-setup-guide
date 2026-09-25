@@ -256,7 +256,9 @@ export const printOrder = (order: Order) => {
         <span>Item</span>
         <span>Qtd &nbsp; Subtotal</span>
       </div>
-      ${order.items.map(item => {
+      ${groupOrderItemsByCategory(order.items).map(group => `
+        <div class="category-title">${group.name}</div>
+        ${group.items.map(item => {
         const itemSubtotal = item.subtotal ?? calculateItemSubtotal(item);
         const comb: any = item.combination;
         const combinationText = item.isHalfPizza && comb
