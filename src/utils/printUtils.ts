@@ -1,4 +1,5 @@
 import { Order, OrderItem, SelectedVariationGroup } from "@/types/order";
+import { groupOrderItemsByCategory, enrichOrderWithCategories } from "@/utils/orderItemCategories";
 
 type PrintableVariation = {
   name?: string;
@@ -142,6 +143,17 @@ export const printOrder = (order: Order) => {
           font-weight: bold;
         }
 
+        .category-title {
+          margin-top: 6px;
+          padding: 3px 0;
+          font-weight: bold;
+          font-size: 12px;
+          text-transform: uppercase;
+          text-align: center;
+          border-top: 1px solid #000;
+          border-bottom: 1px solid #000;
+        }
+
         .item-block {
           padding: 5px 0;
           border-bottom: 1px dashed #999;
@@ -256,7 +268,9 @@ export const printOrder = (order: Order) => {
         <span>Item</span>
         <span>Qtd &nbsp; Subtotal</span>
       </div>
-      ${order.items.map(item => {
+      ${groupOrderItemsByCategory(order.items).map(group => `
+        <div class="category-title">${group.name}</div>
+        ${group.items.map(item => {
         const itemSubtotal = item.subtotal ?? calculateItemSubtotal(item);
         const comb: any = item.combination;
         const combinationText = item.isHalfPizza && comb
@@ -326,7 +340,8 @@ export const printOrder = (order: Order) => {
             ${item.itemObservation ? `<div class="sub-row" style="margin-top:3px;"><span><strong>Observação:</strong> ${item.itemObservation}</span></div>` : ''}
           </div>
         `;
-      }).join('')}
+        }).join('')}
+      `).join('')}
 
 
       <!-- RESUMO FINANCEIRO -->
@@ -420,5 +435,15 @@ export const printOrder = (order: Order) => {
     }
   } else {
     cleanup();
+  }
+};
+
+/** Imprime garantindo que cada item tenha a categoria resolvida (inclusive pedidos antigos). */
+export const printOrderWithCategories = async (order: Order) => {
+  try {
+    const enriched = await enrichOrderWithCategories(order);
+    printOrder(enriched);
+  } catch {
+    printOrder(order);
   }
 };

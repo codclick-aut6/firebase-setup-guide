@@ -4,6 +4,8 @@ export interface OrderItem {
   name: string;
   price: number;
   quantity: number;
+  category?: string;
+  categoryName?: string;
   itemObservation?: string;
   selectedVariations?: SelectedVariationGroup[];
   priceFrom?: boolean;
