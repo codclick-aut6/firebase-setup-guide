@@ -23,7 +23,6 @@ export type Database = {
           name: string
           order: number
           show_in_category_nav: boolean
-          show_in_nav: boolean
           updated_at: string
           visible: boolean
         }
@@ -35,7 +34,6 @@ export type Database = {
           name: string
           order?: number
           show_in_category_nav?: boolean
-          show_in_nav?: boolean
           updated_at?: string
           visible?: boolean
         }
@@ -47,7 +45,6 @@ export type Database = {
           name?: string
           order?: number
           show_in_category_nav?: boolean
-          show_in_nav?: boolean
           updated_at?: string
           visible?: boolean
         }
@@ -174,7 +171,7 @@ export type Database = {
           limite_uso: number | null
           nome: string
           origem: string | null
-          primeira_compra_apenas: boolean
+          primeira_compra_apenas: boolean | null
           produto_brinde: Json | null
           produtos_requeridos: Json | null
           tipo: string
@@ -193,7 +190,7 @@ export type Database = {
           limite_uso?: number | null
           nome: string
           origem?: string | null
-          primeira_compra_apenas?: boolean
+          primeira_compra_apenas?: boolean | null
           produto_brinde?: Json | null
           produtos_requeridos?: Json | null
           tipo: string
@@ -212,7 +209,7 @@ export type Database = {
           limite_uso?: number | null
           nome?: string
           origem?: string | null
-          primeira_compra_apenas?: boolean
+          primeira_compra_apenas?: boolean | null
           produto_brinde?: Json | null
           produtos_requeridos?: Json | null
           tipo?: string
@@ -362,9 +359,6 @@ export type Database = {
           nome: string
           numero: string | null
           pais: string | null
-          pix_chave: string | null
-          pix_cidade: string | null
-          pix_nome_recebedor: string | null
           rua: string | null
           sobre: string | null
           superfrete_sandbox: boolean
@@ -393,9 +387,6 @@ export type Database = {
           nome: string
           numero?: string | null
           pais?: string | null
-          pix_chave?: string | null
-          pix_cidade?: string | null
-          pix_nome_recebedor?: string | null
           rua?: string | null
           sobre?: string | null
           superfrete_sandbox?: boolean
@@ -424,9 +415,6 @@ export type Database = {
           nome?: string
           numero?: string | null
           pais?: string | null
-          pix_chave?: string | null
-          pix_cidade?: string | null
-          pix_nome_recebedor?: string | null
           rua?: string | null
           sobre?: string | null
           superfrete_sandbox?: boolean
@@ -507,6 +495,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fidelidade_historico_regra_id_fkey"
+            columns: ["regra_id"]
+            isOneToOne: false
+            referencedRelation: "fidelidade_regras"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fidelidade_historico_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -519,8 +514,10 @@ export type Database = {
         Row: {
           contagem_pizzas: number
           criado_em: string | null
+          eventos: Json
           id: string
           nome_cliente: string | null
+          regra_id: string | null
           telefone_cliente: string
           ultima_atualizacao: string | null
           valor_gasto_pizzas: number
@@ -528,8 +525,10 @@ export type Database = {
         Insert: {
           contagem_pizzas?: number
           criado_em?: string | null
+          eventos?: Json
           id?: string
           nome_cliente?: string | null
+          regra_id?: string | null
           telefone_cliente: string
           ultima_atualizacao?: string | null
           valor_gasto_pizzas?: number
@@ -537,8 +536,10 @@ export type Database = {
         Update: {
           contagem_pizzas?: number
           criado_em?: string | null
+          eventos?: Json
           id?: string
           nome_cliente?: string | null
+          regra_id?: string | null
           telefone_cliente?: string
           ultima_atualizacao?: string | null
           valor_gasto_pizzas?: number
@@ -661,7 +662,6 @@ export type Database = {
           height_cm: number | null
           hidden_in_menu: boolean
           id: string
-          "id-teste": string | null
           image: string
           is_half_pizza: boolean | null
           length_cm: number | null
@@ -700,7 +700,6 @@ export type Database = {
           height_cm?: number | null
           hidden_in_menu?: boolean
           id: string
-          "id-teste"?: string | null
           image?: string
           is_half_pizza?: boolean | null
           length_cm?: number | null
@@ -739,7 +738,6 @@ export type Database = {
           height_cm?: number | null
           hidden_in_menu?: boolean
           id?: string
-          "id-teste"?: string | null
           image?: string
           is_half_pizza?: boolean | null
           length_cm?: number | null
@@ -1406,31 +1404,56 @@ export type Database = {
           value: string
         }[]
       }
-      mkt_avg_visit_duration: {
-        Args: {
-          p_campaign?: string
-          p_cidade?: string
-          p_end: string
-          p_source?: string
-          p_start: string
-        }
-        Returns: number
-      }
-      mkt_bounce_rate: {
-        Args: {
-          p_campaign?: string
-          p_cidade?: string
-          p_end: string
-          p_source?: string
-          p_start: string
-        }
-        Returns: {
-          bounced_new: number
-          bounced_returning: number
-          bounced_sessions: number
-          total_sessions: number
-        }[]
-      }
+      mkt_avg_visit_duration:
+        | {
+            Args: {
+              p_campaign?: string
+              p_end: string
+              p_source?: string
+              p_start: string
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              p_campaign?: string
+              p_cidade?: string
+              p_end: string
+              p_source?: string
+              p_start: string
+            }
+            Returns: number
+          }
+      mkt_bounce_rate:
+        | {
+            Args: {
+              p_campaign?: string
+              p_end: string
+              p_source?: string
+              p_start: string
+            }
+            Returns: {
+              bounced_new: number
+              bounced_returning: number
+              bounced_sessions: number
+              total_sessions: number
+            }[]
+          }
+        | {
+            Args: {
+              p_campaign?: string
+              p_cidade?: string
+              p_end: string
+              p_source?: string
+              p_start: string
+            }
+            Returns: {
+              bounced_new: number
+              bounced_returning: number
+              bounced_sessions: number
+              total_sessions: number
+            }[]
+          }
       mkt_cidade_options: {
         Args: never
         Returns: {
