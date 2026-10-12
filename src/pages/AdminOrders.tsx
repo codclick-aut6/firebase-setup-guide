@@ -299,6 +299,38 @@ const AdminOrders = () => {
     }
   };
 
+  const [closeCashOpen, setCloseCashOpen] = useState(false);
+  const [closingCash, setClosingCash] = useState(false);
+
+  const handleCloseCash = async () => {
+    const ids = orders
+      .filter(o => o.status !== "cancelled" && !(o.status === "completed" && o.paymentStatus === "recebido"))
+      .map(o => o.id);
+    if (ids.length === 0) {
+      setCloseCashOpen(false);
+      toast({ title: "Nada a fechar", description: "Não há pedidos abertos no período." });
+      return;
+    }
+    setClosingCash(true);
+    try {
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from("pedidos_sabor_delivery")
+        .update({ status_atual: "completed", payment_status: "recebido", atualizado_em: now, atualizado_em_banco: now })
+        .in("id", ids);
+      if (error) throw error;
+      const idSet = new Set(ids);
+      setOrders(prev => prev.map(o => idSet.has(o.id) ? { ...o, status: "completed", paymentStatus: "recebido" } : o));
+      toast({ title: "Caixa fechado", description: `${ids.length} pedido(s) finalizado(s).` });
+      setCloseCashOpen(false);
+    } catch (e) {
+      console.error("Erro ao fechar o caixa:", e);
+      toast({ title: "Erro", description: "Não foi possível fechar o caixa.", variant: "destructive" });
+    } finally {
+      setClosingCash(false);
+    }
+  };
+
   const translateStatus = (status: Order["status"]) => {
     const statusMap: Record<Order["status"], string> = {
       pending: "Pendente",
@@ -477,6 +509,27 @@ const AdminOrders = () => {
           </button>
         </div>
       </div>
+
+      <div className="flex justify-end mt-4">
+        <Button variant="destructive" onClick={() => setCloseCashOpen(true)} disabled={closingCash}>
+          {closingCash ? "Fechando..." : "Fechar o caixa"}
+        </Button>
+      </div>
+
+      <Dialog open={closeCashOpen} onOpenChange={setCloseCashOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Fechar Todos os Pedidos?</DialogTitle>
+            <DialogDescription>
+              Todos os pedidos do período selecionado (exceto cancelados) passarão para "Finalizado" com pagamento "Recebido".
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCloseCashOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleCloseCash} disabled={closingCash}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
