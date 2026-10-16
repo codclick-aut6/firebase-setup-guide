@@ -115,10 +115,12 @@ const AppRoutes = () => {
   
   useAdminOrderWatcher();
 
-  const coverRoutes = ['/', '/minha-conta', '/plano-fidelidade', '/info', '/politica-de-privacidade'];
+  const coverRoutes = ['/', '/minha-conta', '/plano-fidelidade', '/info', '/politica-de-privacidade', '/login', '/register', '/forgot-password', '/orders'];
+  const path = location.pathname.toLowerCase();
   const isAdminPage =
-    adminRoutes.some(route => location.pathname.startsWith(route)) ||
-    coverRoutes.includes(location.pathname);
+    path.includes('admin') ||
+    adminRoutes.some(route => path.startsWith(route)) ||
+    coverRoutes.includes(path.replace(/\/+$/, '') || '/');
 
   return (
     <>
