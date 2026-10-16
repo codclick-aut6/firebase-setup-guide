@@ -382,12 +382,12 @@ const Index = () => {
         const hasAny = urls.some((u) => !!u);
         if (!hasAny) return null;
 
-        const renderBanner = (url: string, i: number, ratio: string) =>
+        const renderBanner = (url: string, i: number, ratio: string, fullBleed = false) =>
           url ? (
             <div
               key={i}
-              className="w-full overflow-hidden rounded-lg bg-muted cursor-pointer shadow-sm"
-              style={{ aspectRatio: ratio }}
+              className={`w-full overflow-hidden bg-muted cursor-pointer shadow-sm ${fullBleed ? "" : "rounded-lg"}`}
+              style={{ aspectRatio: ratio, ...(fullBleed ? { maxHeight: "50vh" } : null) }}
               onClick={() =>
                 runBannerAction(
                   (settings as any)[`banner_extra${i + 1}_action_type`],
@@ -408,19 +408,10 @@ const Index = () => {
           ) : null;
 
         return (
-          <div className="w-full px-4 pt-1 pb-0 md:pt-1 md:pb-3 border-b border-muted/40 -mt-1 md:mt-0 relative z-10" style={{ backgroundColor: settings.cor_background }}>
-            {isLongo ? (
-              // Banner longo: mesma proporção 4:1 (1000x250) no mobile e desktop
-              <div className="max-w-4xl mx-auto">
-                {renderBanner(settings.empresa_banner_extra1_url, 0, "4 / 1")}
-              </div>
-            ) : isSingle ? (
-              // Banner único normal: centralizado com a largura de um banner
-              <div className="grid grid-cols-2 gap-3 max-w-4xl mx-auto">
-                <div className="col-start-1 col-end-3 mx-auto w-[calc(50%-0.375rem)]">
-                  {renderBanner(settings.empresa_banner_extra1_url, 0, "2 / 1")}
-                </div>
-              </div>
+          <div className={`w-full pt-1 pb-0 md:pt-1 md:pb-3 border-b border-muted/40 -mt-1 md:mt-0 relative z-10 ${isSingle ? "" : "px-4"}`} style={{ backgroundColor: settings.cor_background }}>
+            {isSingle ? (
+              // Banner único: ocupa toda a largura da tela
+              renderBanner(settings.empresa_banner_extra1_url, 0, isLongo ? "4 / 1" : "2 / 1", true)
             ) : (
               // Dois banners lado a lado
               <div className="grid grid-cols-2 gap-3 max-w-4xl mx-auto">
