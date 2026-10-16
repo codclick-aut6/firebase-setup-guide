@@ -408,12 +408,12 @@ const Banners = () => {
                       <SelectValue placeholder="Tamanho" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="normal">Normal (centralizado)</SelectItem>
-                      <SelectItem value="longo">Longo (largura total)</SelectItem>
+                      <SelectItem value="normal">Normal (mais alto)</SelectItem>
+                      <SelectItem value="longo">Longo (faixa mais baixa)</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    "Normal" exibe o banner centralizado com a largura de um banner. "Longo" ocupa a largura dos dois banners somada ao espaçamento.
+                    Com 1 banner, ele ocupa toda a largura da tela. "Normal" fica mais alto (proporção 2:1) e "Longo" vira uma faixa mais baixa (proporção 4:1).
                   </p>
                 </div>
               )}
