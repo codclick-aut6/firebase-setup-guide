@@ -28,6 +28,7 @@ import { showPromoRequirementsToast, dismissPromoRequirementsToast } from "@/uti
 import GiftOptionsPicker from "@/components/GiftOptionsPicker";
 import { getFirstPurchaseCouponBlockMessage, validateFirstPurchaseCoupon } from "@/services/couponEligibilityService";
 import { getOrderItemDisplayName } from "@/utils/orderItemDisplay";
+import CartSuggestions from "@/components/CartSuggestions";
 
 
 const ShoppingCart: React.FC = () => {
@@ -708,6 +709,8 @@ const ShoppingCart: React.FC = () => {
                 );
               })}
             </div>
+            <CartSuggestions />
+
             
             {/* Seção de Cupom */}
             <div className="border-t pt-4 space-y-3">

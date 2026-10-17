@@ -49,6 +49,7 @@ import ConfiguracaoMesas from "./pages/ConfiguracaoMesas";
 import Exportacoes from "./pages/Exportacoes";
 import Banners from "./pages/Banners";
 import Manual from "./pages/Manual";
+import AdminSugestoes from "./pages/AdminSugestoes";
 import Cover from "./pages/Cover";
 import MinhaConta from "./pages/MinhaConta";
 import PlanoFidelidade from "./pages/PlanoFidelidade";
@@ -108,6 +109,7 @@ const AppRoutes = () => {
     '/banners',
     '/exportacoes',
     '/manual',
+    '/sugestoes',
     '/configuracao-mesas',
     '/cardapio-qr',
     '/checkout-mesa'
@@ -248,6 +250,7 @@ const AppRoutes = () => {
             <Manual />
           </AdminRoute>
         } />
+        <Route path="/sugestoes" element={<AdminRoute><AdminSugestoes /></AdminRoute>} />
         <Route path="/api/*" element={<Api />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

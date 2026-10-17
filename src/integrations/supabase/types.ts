@@ -1056,6 +1056,45 @@ export type Database = {
         }
         Relationships: []
       }
+      sugestoes_regras: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          gatilho_ids: string[]
+          gatilho_tipo: string
+          id: string
+          nome: string
+          prioridade: number
+          sugestao_ids: string[]
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          gatilho_ids?: string[]
+          gatilho_tipo?: string
+          id?: string
+          nome: string
+          prioridade?: number
+          sugestao_ids?: string[]
+          titulo?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          gatilho_ids?: string[]
+          gatilho_tipo?: string
+          id?: string
+          nome?: string
+          prioridade?: number
+          sugestao_ids?: string[]
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tags_rastreamento: {
         Row: {
           capi_ativo: boolean
