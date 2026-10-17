@@ -709,6 +709,8 @@ const ShoppingCart: React.FC = () => {
                 );
               })}
             </div>
+            <CartSuggestions />
+
             
             {/* Seção de Cupom */}
             <div className="border-t pt-4 space-y-3">

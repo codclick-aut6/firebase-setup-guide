@@ -49,7 +49,7 @@ export const excluirRegra = async (id: string) => {
 /** Regra dispara se algum item do carrinho casa com o gatilho (produto ou categoria principal/adicional). */
 export const regraDispara = (regra: SugestaoRegra, cart: Array<Partial<MenuItem>>): boolean =>
   cart.some((item) => {
-    const baseId = String(item.id ?? "").split("-")[0] && String(item.id ?? "");
+    const baseId = String(item.id ?? "");
     if (regra.gatilho_tipo === "produto") {
       return regra.gatilho_ids.some((g) => baseId === g || baseId.startsWith(g));
     }
