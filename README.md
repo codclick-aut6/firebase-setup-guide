@@ -1,5 +1,7 @@
 
 ----------------------------------------------------
-**V.1.160.1** - doug-aut8/cp-aut8-tracking - 12/10/2026**
+**V.1.161.1** - codclick-aut6/firebase-setup-guide - 15/10/2026**
 ----------------------------------------------------
-- A página de pedidos agora tem um botão "Fechar o caixa", logo acima da lista de pedidos. Ao clicar, aparece a pergunta "Fechar Todos os Pedidos?". Se você confirmar, todos os pedidos do período escolhido passam para "Finalizado", com pagamento "Recebido". Os pedidos cancelados ficam como estão.
+- O carrinho não aparece mais nas telas de entrar, criar conta e recuperar senha, nem nas telas de administração. Ele continua aparecendo normalmente no cardápio e no checkout.
+- Com apenas 1 banner selecionado, ele agora ocupa toda a largura da tela, de ponta a ponta, no celular e no computador — conferi com a sua imagem salva e ela aparece inteira, sem margens laterais.
+A opção de tamanho passou a definir só a altura: Normal fica mais alto e Longo vira uma faixa mais baixa. Com 2 banners, tudo continua como estava.
