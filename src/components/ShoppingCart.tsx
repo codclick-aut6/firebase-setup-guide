@@ -28,6 +28,7 @@ import { showPromoRequirementsToast, dismissPromoRequirementsToast } from "@/uti
 import GiftOptionsPicker from "@/components/GiftOptionsPicker";
 import { getFirstPurchaseCouponBlockMessage, validateFirstPurchaseCoupon } from "@/services/couponEligibilityService";
 import { getOrderItemDisplayName } from "@/utils/orderItemDisplay";
+import CartSuggestions from "@/components/CartSuggestions";
 
 
 const ShoppingCart: React.FC = () => {
