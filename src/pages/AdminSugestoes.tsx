@@ -16,7 +16,7 @@ import type { Category, MenuItem } from "@/types/menu";
 import { POPULAR_CATEGORY_ID } from "@/types/menu";
 
 const vazia: SugestaoRegra = {
-  nome: "", titulo: "Peça também", gatilho_tipo: "categoria", gatilho_ids: [], sugestao_ids: [], prioridade: 0, ativo: true,
+  nome: "", titulo: "Peça também", gatilho_tipo: "categoria", gatilho_ids: [], sugestao_ids: [], prioridade: 0, ativo: true, desconto_valor: 0,
 };
 
 const MultiPick: React.FC<{
@@ -99,6 +99,7 @@ const AdminSugestoes = () => {
                 <p className="font-semibold">{r.nome} {!r.ativo && <span className="text-xs text-muted-foreground">(pausada)</span>}</p>
                 <p><span className="text-muted-foreground">Quem pedir {r.gatilho_tipo === "categoria" ? "da categoria" : "o produto"}:</span> {r.gatilho_ids.map((i) => nomeDe(r.gatilho_tipo, i)).join(", ")}</p>
                 <p><span className="text-muted-foreground">Recebe sugestão de:</span> {r.sugestao_ids.map((i) => nomeDe("produto", i)).join(", ")}</p>
+                {Number(r.desconto_valor) > 0 && <p className="text-food-green font-medium">Desconto: R$ {Number(r.desconto_valor).toFixed(2).replace(".", ",")}</p>}
               </div>
               <div className="flex items-center gap-2">
                 <Switch checked={r.ativo} onCheckedChange={async (v) => { await salvarRegra({ ...r, ativo: v }); load(); }} />
@@ -131,6 +132,11 @@ const AdminSugestoes = () => {
               <div>
                 <Label>Sugerir estes produtos</Label>
                 <MultiPick options={prodOpts} value={edit.sugestao_ids} onChange={(v) => setEdit({ ...edit, sugestao_ids: v })} />
+              </div>
+              <div>
+                <Label>Desconto nos produtos sugeridos (R$)</Label>
+                <Input type="number" min={0} step="0.01" value={edit.desconto_valor ?? 0} onChange={(e) => setEdit({ ...edit, desconto_valor: Math.max(0, Number(e.target.value) || 0) })} />
+                <p className="text-xs text-muted-foreground mt-1">0 = preço normal. O valor é descontado do preço (ou do tamanho escolhido) só quando o cliente adiciona pela sugestão.</p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="w-28"><Label>Prioridade</Label><Input type="number" value={edit.prioridade} onChange={(e) => setEdit({ ...edit, prioridade: Number(e.target.value) || 0 })} /></div>

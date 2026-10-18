@@ -55,6 +55,7 @@ export interface MenuItem {
 }
 
 export interface CartItem extends MenuItem {
+  upsellDiscount?: number; // Desconto fixo (R$) aplicado via sugestão de venda
   quantity: number;
   itemObservation?: string;
   selectedVariations?: SelectedVariationGroup[];
