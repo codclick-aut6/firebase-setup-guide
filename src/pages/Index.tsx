@@ -149,9 +149,9 @@ const Index = () => {
   }, [searchParams, setSearchParams]);
 
   const handleDeepLink = useCallback(() => {
-    if (deepLinkHandled.current) return;
     const itemId = searchParams.get("item");
-    if (!itemId || menuItems.length === 0) return;
+    if (!itemId) { deepLinkHandled.current = false; return; }
+    if (deepLinkHandled.current || menuItems.length === 0) return;
     const matchedItem = menuItems.find(i => i.id === itemId);
     if (!matchedItem) return;
 

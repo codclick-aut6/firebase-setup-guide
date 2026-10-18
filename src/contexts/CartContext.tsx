@@ -543,6 +543,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const enrichedVariations = enrichSelectedVariations(selectedVariations);
     const itemId = item.id;
 
+    try {
+      const upsellId = sessionStorage.getItem("upsell_return_item");
+      if (upsellId && String(itemId).startsWith(upsellId)) {
+        sessionStorage.removeItem("upsell_return_item");
+        setTimeout(() => setIsCartOpen(true), 300);
+      }
+    } catch { /* ignore */ }
+
     setCartItems(prevItems => {
       const existingItem = prevItems.find(
         i =>
