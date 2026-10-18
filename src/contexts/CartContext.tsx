@@ -193,7 +193,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           restoredItems.push({
             ...fresh,
-            price: restoredSize ? restoredSize.price : fresh.price,
+            price: Math.max(0, (restoredSize ? restoredSize.price : fresh.price) - (Number(saved.upsellDiscount) || 0)),
+            upsellDiscount: saved.upsellDiscount,
             priceFrom: restoredSize ? false : fresh.priceFrom,
             quantity: saved.quantity,
             selectedVariations: saved.selectedVariations,
@@ -544,10 +545,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const itemId = item.id;
 
     try {
-      const upsellId = sessionStorage.getItem("upsell_return_item");
-      if (upsellId && String(itemId).startsWith(upsellId)) {
-        sessionStorage.removeItem("upsell_return_item");
-        setTimeout(() => setIsCartOpen(true), 300);
+      const raw = sessionStorage.getItem("upsell_return_item");
+      if (raw) {
+        let flag: { id: string; desconto?: number };
+        try { flag = JSON.parse(raw); } catch { flag = { id: raw }; }
+        if (flag?.id && String(itemId).startsWith(flag.id)) {
+          sessionStorage.removeItem("upsell_return_item");
+          const d = Math.max(0, Number(flag.desconto) || 0);
+          if (d > 0) {
+            (item as any).upsellDiscount = d;
+            item.price = Math.max(0, Math.round(((item.price || 0) - d) * 100) / 100);
+          }
+          setTimeout(() => setIsCartOpen(true), 300);
+        }
       }
     } catch { /* ignore */ }
 

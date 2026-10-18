@@ -12,6 +12,7 @@ export interface SugestaoRegra {
   sugestao_ids: string[];
   prioridade: number;
   ativo: boolean;
+  desconto_valor?: number;
 }
 
 const table = () => (supabase as any).from("sugestoes_regras");
@@ -62,18 +63,29 @@ export const calcularSugestoes = (
   regras: SugestaoRegra[],
   cart: Array<Partial<MenuItem>>,
   menu: MenuItem[],
-): { titulo: string; itens: MenuItem[] } => {
+): { titulo: string; itens: MenuItem[]; descontos: Record<string, number> } => {
   const noCarrinho = cart.map((c) => String(c.id ?? ""));
   const ids: string[] = [];
   let titulo = "";
+  const descontos: Record<string, number> = {};
   for (const r of regras) {
     if (!r.ativo || !regraDispara(r, cart)) continue;
     if (!titulo) titulo = r.titulo;
-    for (const s of r.sugestao_ids) if (!ids.includes(s)) ids.push(s);
+    const d = Math.max(0, Number(r.desconto_valor) || 0);
+    for (const s of r.sugestao_ids) {
+      if (!ids.includes(s)) ids.push(s);
+      if (d > (descontos[s] ?? 0)) descontos[s] = d;
+    }
   }
   const itens = ids
     .map((id) => menu.find((m) => m.id === id))
     .filter((m): m is MenuItem => !!m && m.available !== false && m.stock !== 0)
     .filter((m) => !noCarrinho.some((c) => c === m.id || c.startsWith(m.id)));
-  return { titulo: titulo || "Peça também", itens };
+  return { titulo: titulo || "Peça também", itens, descontos };
 };
+
+/** Preço final com desconto fixo em reais (nunca negativo). */
+export const aplicarDesconto = (preco: number, desconto: number) =>
+  Math.max(0, Math.round(((preco || 0) - (desconto || 0)) * 100) / 100);
+
+export const UPSELL_FLAG = "upsell_return_item";
