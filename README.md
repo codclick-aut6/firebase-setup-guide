@@ -1,10 +1,11 @@
 
 ----------------------------------------------------
-**V.1.162.1** - codclick-aut6/firebase-setup-guide - 15/10/2026**
+**V.1.162.2** - codclick-aut6/firebase-setup-guide - 18/10/2026**
 ----------------------------------------------------
-- Adiciinado o UPSELL no carrinho. Agora é possível implementar sugestões de produtos para vender com outros produtos.
-
-SQL NECESSARIO:
+- Adicionado o UPSELL no carrinho. Agora é possível implementar sugestões de produtos para vender com outros produtos.
+- Adicionado desconto especial de upsell na regra de upsell
+- 
+SQL COMPLETO DA VERDAO ANTERIOR + ATUAL NECESSARIO:
 
   -- Cria tabela upsell sugestoes_regras 
   CREATE TABLE public.sugestoes_regras (
@@ -29,3 +30,4 @@ CREATE POLICY "sugestoes admin insert" ON public.sugestoes_regras FOR INSERT TO 
 CREATE POLICY "sugestoes admin update" ON public.sugestoes_regras FOR UPDATE TO authenticated USING (public.is_admin_or_super(auth.uid())) WITH CHECK (public.is_admin_or_super(auth.uid()));
 CREATE POLICY "sugestoes admin delete" ON public.sugestoes_regras FOR DELETE TO authenticated USING (public.is_admin_or_super(auth.uid()));
 CREATE TRIGGER sugestoes_regras_updated_at BEFORE UPDATE ON public.sugestoes_regras FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+ALTER TABLE public.sugestoes_regras ADD COLUMN IF NOT EXISTS desconto_valor numeric NOT NULL DEFAULT 0;
