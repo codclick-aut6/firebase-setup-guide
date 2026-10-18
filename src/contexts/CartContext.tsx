@@ -88,6 +88,7 @@ const saveCartToStorage = (items: CartItem[]) => {
       isHalfPizza: item.isHalfPizza,
       combination: item.combination,
       itemObservation: item.itemObservation,
+      upsellDiscount: item.upsellDiscount,
     }));
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(minimal));
   } catch (e) {
