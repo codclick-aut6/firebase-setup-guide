@@ -29,6 +29,7 @@ const CartSuggestions: React.FC = () => {
     const precisaEscolher =
       item.hasVariations || (item.pizzaSizes?.length ?? 0) > 0 || item.tipo === "pizza" || item.priceFrom;
     if (precisaEscolher) {
+      try { sessionStorage.setItem("upsell_return_item", item.id); } catch { /* ignore */ }
       setIsCartOpen(false);
       navigate(`/cardapio?item=${item.id}`);
       return;
