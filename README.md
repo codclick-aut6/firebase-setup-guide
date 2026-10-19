@@ -1,33 +1,17 @@
 
 ----------------------------------------------------
-**V.1.162.2** - codclick-aut6/firebase-setup-guide - 18/10/2026**
+**V.1.163.2** - codclick-aut6/firebase-setup-guide - 19/10/2026**
 ----------------------------------------------------
-- Adicionado o UPSELL no carrinho. Agora é possível implementar sugestões de produtos para vender com outros produtos.
-- Adicionado desconto especial de upsell na regra de upsell
-- 
-SQL COMPLETO DA VERDAO ANTERIOR + ATUAL NECESSARIO:
+- Resolvido o BUG de cupom com valor minimo => Quando retirados produtos de carrinho e deixado com valor inferior ao exigido pelo cupom, o desconto continuava válido.
 
-  -- Cria tabela upsell sugestoes_regras 
-  CREATE TABLE public.sugestoes_regras (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  nome text NOT NULL,
-  titulo text NOT NULL DEFAULT 'Peça também',
-  gatilho_tipo text NOT NULL DEFAULT 'categoria',
-  gatilho_ids text[] NOT NULL DEFAULT '{}',
-  sugestao_ids text[] NOT NULL DEFAULT '{}',
-  prioridade integer NOT NULL DEFAULT 0,
-  ativo boolean NOT NULL DEFAULT true,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-GRANT SELECT ON public.sugestoes_regras TO anon;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.sugestoes_regras TO authenticated;
-GRANT ALL ON public.sugestoes_regras TO service_role;
-ALTER TABLE public.sugestoes_regras ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "sugestoes public read active" ON public.sugestoes_regras FOR SELECT TO anon USING (ativo IS TRUE);
-CREATE POLICY "sugestoes auth read" ON public.sugestoes_regras FOR SELECT TO authenticated USING (ativo IS TRUE OR public.is_admin_or_super(auth.uid()));
-CREATE POLICY "sugestoes admin insert" ON public.sugestoes_regras FOR INSERT TO authenticated WITH CHECK (public.is_admin_or_super(auth.uid()));
-CREATE POLICY "sugestoes admin update" ON public.sugestoes_regras FOR UPDATE TO authenticated USING (public.is_admin_or_super(auth.uid())) WITH CHECK (public.is_admin_or_super(auth.uid()));
-CREATE POLICY "sugestoes admin delete" ON public.sugestoes_regras FOR DELETE TO authenticated USING (public.is_admin_or_super(auth.uid()));
-CREATE TRIGGER sugestoes_regras_updated_at BEFORE UPDATE ON public.sugestoes_regras FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
-ALTER TABLE public.sugestoes_regras ADD COLUMN IF NOT EXISTS desconto_valor numeric NOT NULL DEFAULT 0;
+O QUE FOI AJUSTADO: 
+Estado do cupom (CartContext.tsx):
+Adicionar o campo valor_minimo_pedido à interface AppliedCoupon e persistir junto ao cupom no localStorage.
+Entrada do cupom (CouponField.tsx e ShoppingCart.tsx):
+Salvar cupomData.valor_minimo_pedido no objeto do cupom aplicado.
+Recálculo em tempo real (CartContext.tsx):
+Ao recalcular o total do carrinho após qualquer remoção/alteração de quantidade, checar se cartTotal < valor_minimo_pedido.
+Validação final no Checkout (Checkout.tsx):
+Antes de submeter o pedido, checar no backend/Supabase se o cupom ainda atende ao valor mínimo dos produtos, evitando qualquer inconsistência.
+
+- Botão "Adicionar Mais Itens" no checkout levava para a página inicial "/". Agora leva para "/cardapio"; Linha 1860 de checkout.tsx
