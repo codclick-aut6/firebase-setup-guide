@@ -1,17 +1,10 @@
 
 ----------------------------------------------------
-**V.1.163.2** - codclick-aut6/firebase-setup-guide - 19/10/2026**
+**V.1.164.1** - codclick-aut6/firebase-setup-guide - 19/10/2026**
 ----------------------------------------------------
-- Resolvido o BUG de cupom com valor minimo => Quando retirados produtos de carrinho e deixado com valor inferior ao exigido pelo cupom, o desconto continuava válido.
+- Na tela Sugestões de Venda, os produtos disponíveis para upsell agora aparecem separados por categoria.
 
-O QUE FOI AJUSTADO: 
-Estado do cupom (CartContext.tsx):
-Adicionar o campo valor_minimo_pedido à interface AppliedCoupon e persistir junto ao cupom no localStorage.
-Entrada do cupom (CouponField.tsx e ShoppingCart.tsx):
-Salvar cupomData.valor_minimo_pedido no objeto do cupom aplicado.
-Recálculo em tempo real (CartContext.tsx):
-Ao recalcular o total do carrinho após qualquer remoção/alteração de quantidade, checar se cartTotal < valor_minimo_pedido.
-Validação final no Checkout (Checkout.tsx):
-Antes de submeter o pedido, checar no backend/Supabase se o cupom ainda atende ao valor mínimo dos produtos, evitando qualquer inconsistência.
-
-- Botão "Adicionar Mais Itens" no checkout levava para a página inicial "/". Agora leva para "/cardapio"; Linha 1860 de checkout.tsx
+Lista por categoria: cada categoria abre e fecha com um toque e mostra quantos produtos dela já foram escolhidos.
+Categoria inteira: o botão "+ Categoria inteira" adiciona de uma vez todos os produtos que ainda faltam daquela categoria.
+Escolhidos no topo: os produtos escolhidos ficam numa área separada. Tocar num deles tira o produto da regra e ele volta para a lista da sua categoria. O botão "Limpar" tira todos.
+Busca: ao buscar um nome, as categorias que têm produtos com esse nome abrem sozinhas.
