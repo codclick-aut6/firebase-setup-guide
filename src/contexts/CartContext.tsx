@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { CartItem, MenuItem, SelectedVariationGroup, PizzaBorder, PizzaSize } from "@/types/menu";
 import { toast } from "@/components/ui/use-toast";
 import { getAllVariations } from "@/services/variationService";
