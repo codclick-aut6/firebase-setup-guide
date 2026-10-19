@@ -126,6 +126,7 @@ export const useBannerAction = () => {
             produtos_requeridos: c.produtos_requeridos ?? null,
             produto_brinde: c.produto_brinde ?? null,
             primeira_compra_apenas: c.primeira_compra_apenas ?? false,
+            valor_minimo_pedido: Number(c.valor_minimo_pedido) || 0,
           });
 
           const template =

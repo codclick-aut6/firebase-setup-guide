@@ -235,6 +235,7 @@ const ShoppingCart: React.FC = () => {
         produtos_requeridos: cupomData.produtos_requeridos ?? null,
         produto_brinde: cupomData.produto_brinde ?? null,
         primeira_compra_apenas: cupomData.primeira_compra_apenas ?? false,
+        valor_minimo_pedido: Number(cupomData.valor_minimo_pedido) || 0,
       });
 
       const descricaoDesconto =

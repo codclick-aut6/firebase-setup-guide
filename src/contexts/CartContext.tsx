@@ -38,6 +38,7 @@ interface AppliedCoupon {
   produtos_requeridos?: ProdutoRef[] | null;
   produto_brinde?: ProdutoRef | null;
   primeira_compra_apenas?: boolean | null;
+  valor_minimo_pedido?: number | null;
   // Escolha do cliente quando produto_brinde.modo === "escolha" (legado — uma única escolha)
   brinde_escolhido?: { product_id: string; product_name: string } | null;
   // Escolha do cliente quando produto_brinde.modo === "escolha" e quantidade > 1:
@@ -69,6 +70,8 @@ interface CartContextType {
   discountAmount: number;
   finalTotal: number;
   isCouponRequirementsMet: () => boolean;
+  /** Quanto falta (R$) para atingir o pedido mínimo do cupom; 0 quando atendido. */
+  couponMinimumShortfall: number;
 }
 
 
@@ -299,7 +302,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Calcular desconto e total final
     let discount = 0;
-    if (appliedCoupon) {
+    const minimo = Number(appliedCoupon?.valor_minimo_pedido) || 0;
+    const abaixoMinimo = minimo > 0 && total + 0.005 < minimo;
+    if (appliedCoupon && !abaixoMinimo) {
       if (appliedCoupon.tipo === "percentual") {
         discount = total * (appliedCoupon.valor / 100);
       } else if (appliedCoupon.tipo === "fixo") {
@@ -743,6 +748,29 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dismissPromoRequirementsToast();
   };
 
+  const couponMinimo = Number(appliedCoupon?.valor_minimo_pedido) || 0;
+  const couponMinimumShortfall =
+    appliedCoupon && couponMinimo > 0 && cartTotal + 0.005 < couponMinimo
+      ? Number((couponMinimo - cartTotal).toFixed(2))
+      : 0;
+
+  // Cupons salvos antes deste campo existir: busca o valor mínimo uma vez
+  useEffect(() => {
+    if (!appliedCoupon || appliedCoupon.valor_minimo_pedido !== undefined) return;
+    let cancel = false;
+    supabase
+      .from("cupons" as any)
+      .select("valor_minimo_pedido")
+      .eq("id", appliedCoupon.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancel) return;
+        const v = Number((data as any)?.valor_minimo_pedido) || 0;
+        setAppliedCoupon((prev) => (prev && prev.id === appliedCoupon.id ? { ...prev, valor_minimo_pedido: v } : prev));
+      });
+    return () => { cancel = true; };
+  }, [appliedCoupon?.id, appliedCoupon?.valor_minimo_pedido]);
+
   const isCouponRequirementsMet = () => {
     if (!appliedCoupon || appliedCoupon.tipo !== "compre_e_ganhe") return true;
     const semBrindes = cartItems.filter((i) => !isGiftItem(i));
@@ -771,6 +799,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         discountAmount,
         finalTotal,
         isCouponRequirementsMet,
+        couponMinimumShortfall,
       }}
     >
       {children}
