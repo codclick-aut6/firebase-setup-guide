@@ -50,7 +50,7 @@ import { getFirstPurchaseCouponBlockMessage, validateFirstPurchaseCoupon } from 
 import { getOrderItemDisplayName } from "@/utils/orderItemDisplay";
 
 const Checkout = () => {
-  const { cartItems, cartTotal, clearCart, removeFromCart, updateCartItemByIndex, appliedCoupon, setAppliedCoupon, discountAmount, finalTotal, isCouponRequirementsMet } = useCart();
+  const { cartItems, cartTotal, clearCart, removeFromCart, updateCartItemByIndex, appliedCoupon, setAppliedCoupon, discountAmount, finalTotal, isCouponRequirementsMet, couponMinimumShortfall } = useCart();
   const { currentUser } = useAuth();
   const { isOpen: storeIsOpen, loading: storeOpenLoading } = useStoreOpen();
   const { role } = useUserRole();
@@ -88,7 +88,7 @@ const Checkout = () => {
   
   // Verificar se algum item do carrinho tem frete grátis
   // Para pizza meio a meio, ambos os sabores precisam ter freteGratis
-  const hasFreteGratis = (appliedCoupon?.tipo === "frete_gratis") || cartItems.some(item => {
+  const hasFreteGratis = (appliedCoupon?.tipo === "frete_gratis" && couponMinimumShortfall === 0) || cartItems.some(item => {
     if (item.isHalfPizza) {
       return item.freteGratis === true;
     }
@@ -547,6 +547,16 @@ const handleSubmit = async (e: React.FormEvent) => {
     toast({
       title: "Loja fechada",
       description: "Pedidos só podem ser finalizados dentro do horário de funcionamento.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  // Cupom pausado por pedido mínimo não atingido
+  if (appliedCoupon && couponMinimumShortfall > 0) {
+    toast({
+      title: "Pedido mínimo do cupom não atingido",
+      description: `Faltam ${formatCurrency(couponMinimumShortfall)} para usar o cupom ${appliedCoupon.nome}. Adicione mais itens ou remova o cupom.`,
       variant: "destructive",
     });
     return;
