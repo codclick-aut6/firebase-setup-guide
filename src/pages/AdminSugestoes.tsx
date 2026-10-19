@@ -45,6 +45,82 @@ const MultiPick: React.FC<{
   );
 };
 
+const GroupedPick: React.FC<{
+  menu: MenuItem[];
+  cats: Category[];
+  value: string[];
+  onChange: (v: string[]) => void;
+}> = ({ menu, cats, value, onChange }) => {
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const selected = value.map((id) => menu.find((m) => m.id === id)).filter(Boolean) as MenuItem[];
+  const groups = useMemo(() => {
+    const term = q.toLowerCase();
+    const list = [...cats.map((c) => ({ id: c.id, name: c.name })), { id: "__outros", name: "Outros" }];
+    return list
+      .map((c) => ({
+        ...c,
+        items: menu.filter((m) =>
+          !value.includes(m.id) &&
+          m.name.toLowerCase().includes(term) &&
+          (c.id === "__outros" ? !cats.some((x) => x.id === m.category) : m.category === c.id),
+        ),
+        total: menu.filter((m) => (c.id === "__outros" ? !cats.some((x) => x.id === m.category) : m.category === c.id)).length,
+      }))
+      .filter((g) => g.items.length);
+  }, [menu, cats, value, q]);
+
+  return (
+    <div className="border rounded-md">
+      <div className="p-2 border-b bg-muted/40">
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-xs font-semibold">{selected.length} produto(s) selecionado(s)</p>
+          {!!selected.length && <button type="button" className="text-xs text-destructive" onClick={() => onChange([])}>Limpar</button>}
+        </div>
+        {!selected.length ? (
+          <p className="text-xs text-muted-foreground">Nenhum produto escolhido.</p>
+        ) : (
+          <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+            {selected.map((m) => (
+              <button key={m.id} type="button" onClick={() => onChange(value.filter((v) => v !== m.id))}
+                className="text-xs rounded-full border bg-background px-2 py-0.5 hover:border-destructive">
+                {m.name} ✕
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <Input placeholder="Buscar produto..." value={q} onChange={(e) => setQ(e.target.value)} className="border-0 border-b rounded-none" />
+      <div className="max-h-64 overflow-y-auto">
+        {groups.map((g) => {
+          const isOpen = !!q || open[g.id];
+          return (
+            <div key={g.id} className="border-b last:border-0">
+              <div className="flex items-center justify-between px-2 py-1.5">
+                <button type="button" className="text-sm font-medium flex-1 text-left" onClick={() => setOpen({ ...open, [g.id]: !open[g.id] })}>
+                  {isOpen ? "▾" : "▸"} {g.name} <span className="text-xs text-muted-foreground">[{g.total - g.items.length}/{g.total}]</span>
+                </button>
+                <button type="button" className="text-xs text-primary font-semibold" onClick={() => onChange([...value, ...g.items.map((i) => i.id)])}>
+                  + Categoria inteira
+                </button>
+              </div>
+              {isOpen && (
+                <div className="pb-2 px-2 space-y-1">
+                  {g.items.map((m) => (
+                    <button key={m.id} type="button" onClick={() => onChange([...value, m.id])}
+                      className="w-full text-left text-sm px-2 py-1 rounded hover:bg-muted">+ {m.name}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {!groups.length && <p className="text-xs text-muted-foreground p-2">Nada disponível</p>}
+      </div>
+    </div>
+  );
+};
+
 const AdminSugestoes = () => {
   const { toast } = useToast();
   const [regras, setRegras] = useState<SugestaoRegra[]>([]);
@@ -131,7 +207,7 @@ const AdminSugestoes = () => {
               </div>
               <div>
                 <Label>Sugerir estes produtos</Label>
-                <MultiPick options={prodOpts} value={edit.sugestao_ids} onChange={(v) => setEdit({ ...edit, sugestao_ids: v })} />
+                <GroupedPick menu={menu} cats={cats} value={edit.sugestao_ids} onChange={(v) => setEdit({ ...edit, sugestao_ids: v })} />
               </div>
               <div>
                 <Label>Desconto nos produtos sugeridos (R$)</Label>
