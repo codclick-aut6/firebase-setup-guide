@@ -45,6 +45,7 @@ const ShoppingCart: React.FC = () => {
     setAppliedCoupon,
     setBrindeEscolhido,
     setBrindesEscolhidos,
+    couponMinimumShortfall,
 
     discountAmount,
     finalTotal,
@@ -235,6 +236,7 @@ const ShoppingCart: React.FC = () => {
         produtos_requeridos: cupomData.produtos_requeridos ?? null,
         produto_brinde: cupomData.produto_brinde ?? null,
         primeira_compra_apenas: cupomData.primeira_compra_apenas ?? false,
+        valor_minimo_pedido: Number(cupomData.valor_minimo_pedido) || 0,
       });
 
       const descricaoDesconto =
@@ -756,6 +758,11 @@ const ShoppingCart: React.FC = () => {
                         : `🎁 Brinde: ${appliedCoupon.produto_brinde?.quantidade || 1}x ${appliedCoupon.produto_brinde?.product_name || ""}`
                       : `Desconto de ${appliedCoupon.tipo === "percentual" ? `${appliedCoupon.valor}%` : formatCurrency(appliedCoupon.valor)}`}
                   </p>
+                  {couponMinimumShortfall > 0 && (
+                    <div className="rounded border border-yellow-400 bg-yellow-100 p-2 text-xs text-yellow-900">
+                      ⏸️ Cupom pausado: faltam <strong>{formatCurrency(couponMinimumShortfall)}</strong> para o pedido mínimo de {formatCurrency(Number(appliedCoupon.valor_minimo_pedido) || 0)}. Adicione mais itens para reativar o desconto.
+                    </div>
+                  )}
 
                   {appliedCoupon.tipo === "compre_e_ganhe" &&
                     appliedCoupon.produto_brinde?.modo === "escolha" && (() => {
