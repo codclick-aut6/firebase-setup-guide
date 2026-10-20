@@ -224,10 +224,12 @@ const fetchLayoutSettings = async (): Promise<LayoutSettingsBundle> => {
 
     const light = { ...defaults };
     const darkOverrides: Partial<LayoutSettings> = {};
+    const seen = new Set<string>();
     let darkMode = false;
 
     data?.forEach((row) => {
       if (!row.valor) return;
+      seen.add(row.chave);
       if (row.chave === 'modo_escuro') {
         darkMode = row.valor === 'true';
       } else if (row.chave.startsWith('dark_')) {
@@ -238,11 +240,19 @@ const fetchLayoutSettings = async (): Promise<LayoutSettingsBundle> => {
       }
     });
 
+    const dark: LayoutSettings = { ...light, ...darkOverrides };
+
+    // Compatibilidade: lojas criadas antes de existir a cor separada dos cards
+    // continuam com o fundo dos itens igual ao do cabeçalho.
+    if (!seen.has('cor_background_cards')) light.cor_background_cards = light.cor_background_header;
+    if (!seen.has(darkKey('cor_background_cards'))) dark.cor_background_cards = dark.cor_background_header;
+
     const bundle: LayoutSettingsBundle = {
       light,
-      dark: { ...light, ...darkOverrides },
+      dark,
       darkMode,
     };
+
     writeCache(bundle);
     return bundle;
   })();
