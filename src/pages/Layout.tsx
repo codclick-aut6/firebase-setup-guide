@@ -153,6 +153,8 @@ const Layout = () => {
   const [corFonteBotoes, setCorFonteBotoes] = useState('#1f2937');
   const [corBotaoAdicionar, setCorBotaoAdicionar] = useState('#4CAF50');
   const [corBackgroundHeader, setCorBackgroundHeader] = useState('#ffffff');
+  const [corBackgroundCards, setCorBackgroundCards] = useState('#ffffff');
+
   const [corChatCabecalho, setCorChatCabecalho] = useState('#ff4400');
   const [corChatFonteCabecalho, setCorChatFonteCabecalho] = useState('#ffffff');
   const [corChatFonteBaloes, setCorChatFonteBaloes] = useState('#050200');
@@ -179,6 +181,8 @@ const Layout = () => {
     corBotoes: '#098a00',
     corFonteBotoes: '#f5f5f5',
     corBackgroundHeader: '#f5f5f5',
+    corBackgroundCards: '#ffffff',
+
     corDestaqueCategoriaAtiva: '#098a00',
     corFonteCategoriaAtiva: '#ffffff',
   };
@@ -197,6 +201,8 @@ const Layout = () => {
     corBotoes: '#0a2e14',
     corFonteBotoes: '#4ade80',
     corBackgroundHeader: '#0d0d0d',
+    corBackgroundCards: '#0d0d0d',
+
     corDestaqueCategoriaAtiva: '#22c55e',
     corFonteCategoriaAtiva: '#ffffff',
   };
@@ -246,6 +252,8 @@ const Layout = () => {
       setCorFonteBotoes(settings.cor_fonte_botoes);
       setCorBotaoAdicionar(settings.cor_botao_adicionar);
       setCorBackgroundHeader(settings.cor_background_header);
+      setCorBackgroundCards(settings.cor_background_cards);
+
       setCorChatCabecalho(settings.cor_chat_cabecalho);
       setCorChatFonteCabecalho(settings.cor_chat_fonte_cabecalho);
       setCorChatFonteBaloes(settings.cor_chat_fonte_baloes);
@@ -363,6 +371,8 @@ const Layout = () => {
       cor_fonte_botoes: DARK_COLORS.corFonteBotoes,
       cor_botao_adicionar: '#4CAF50',
       cor_background_header: DARK_COLORS.corBackgroundHeader,
+      cor_background_cards: DARK_COLORS.corBackgroundCards,
+
       cor_destaque_categoria_ativa: DARK_COLORS.corDestaqueCategoriaAtiva,
       cor_fonte_categoria_ativa: DARK_COLORS.corFonteCategoriaAtiva,
     }));
@@ -433,6 +443,8 @@ const Layout = () => {
         cor_fonte_botoes: corFonteBotoes,
         cor_botao_adicionar: corBotaoAdicionar,
         cor_background_header: corBackgroundHeader,
+        cor_background_cards: corBackgroundCards,
+
         cor_chat_cabecalho: corChatCabecalho,
         cor_chat_fonte_cabecalho: corChatFonteCabecalho,
         cor_chat_fonte_baloes: corChatFonteBaloes,
@@ -488,6 +500,8 @@ const Layout = () => {
       setCorFonteBotoes(DEFAULT_COLORS.corFonteBotoes);
       setCorBotaoAdicionar('#4CAF50');
       setCorBackgroundHeader(DEFAULT_COLORS.corBackgroundHeader);
+      setCorBackgroundCards(DEFAULT_COLORS.corBackgroundCards);
+
 
       // Save all default colors to database
       await saveLayoutSettingsBatch({
@@ -503,6 +517,8 @@ const Layout = () => {
         cor_fonte_botoes: DEFAULT_COLORS.corFonteBotoes,
         cor_botao_adicionar: '#4CAF50',
         cor_background_header: DEFAULT_COLORS.corBackgroundHeader,
+        cor_background_cards: DEFAULT_COLORS.corBackgroundCards,
+
       });
       toast({ title: 'Sucesso', description: 'Layout resetado para o padrão original!' });
     } catch (err) {
