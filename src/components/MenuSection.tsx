@@ -40,6 +40,11 @@ const MenuSection: React.FC<MenuSectionProps> = ({ title, categoryId, category, 
 
   const isTwoColumns = effectiveMobileColumns === 2;
 
+  // Altura mínima reservada por LINHA (e não por item), para que sobra de
+  // espaço vertical não estique os cards quando há 2 ou 4 produtos.
+  const rows = isTwoColumns ? Math.ceil(visibleItems.length / 2) : visibleItems.length;
+  const reservedRows = Math.min(rows, isTwoColumns ? 2 : 4);
+
   return (
     <div className="mb-12">
       <h2
@@ -63,7 +68,7 @@ const MenuSection: React.FC<MenuSectionProps> = ({ title, categoryId, category, 
       ) : (
       <div
         className={`grid gap-4 md:grid-cols-2 lg:grid-cols-3 ${isTwoColumns ? 'grid-cols-2' : 'grid-cols-1'}`}
-        style={{ minHeight: Math.min(visibleItems.length, 4) * (isTwoColumns ? 180 : 140) }}
+        style={{ minHeight: reservedRows * (isTwoColumns ? 180 : 140), alignContent: 'start' }}
       >
         {visibleItems.map((item, idx) => (
           <MenuItemCard
