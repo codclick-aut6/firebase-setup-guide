@@ -49,6 +49,8 @@ export interface LayoutSettings {
   cor_fonte_botoes: string;
   cor_botao_adicionar: string;
   cor_background_header: string;
+  cor_background_cards: string;
+
   cor_chat_cabecalho: string;
   cor_chat_fonte_cabecalho: string;
   cor_chat_fonte_baloes: string;
@@ -118,6 +120,8 @@ const defaults: LayoutSettings = {
   cor_fonte_botoes: '#1f2937',
   cor_botao_adicionar: '#4CAF50',
   cor_background_header: '#ffffff',
+  cor_background_cards: '#ffffff',
+
   cor_chat_cabecalho: '#ff4400',
   cor_chat_fonte_cabecalho: '#ffffff',
   cor_chat_fonte_baloes: '#050200',
