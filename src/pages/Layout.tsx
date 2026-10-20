@@ -564,6 +564,13 @@ const Layout = () => {
       ],
     },
     {
+      title: 'Cards dos Itens',
+      fields: [
+        { key: 'cor_background_cards', label: 'Fundo dos Cards dos Itens', value: corBackgroundCards, set: setCorBackgroundCards },
+      ],
+    },
+
+    {
       title: 'Chat',
       fields: [
         { key: 'cor_chat_cabecalho', label: 'Cabeçalho do Chat', value: corChatCabecalho, set: setCorChatCabecalho },
@@ -995,10 +1002,13 @@ const Layout = () => {
                     <div className="h-7 rounded border bg-white px-2 flex items-center text-xs text-gray-400">Buscar no cardápio...</div>
                   </div>
                   <span className="text-base font-semibold mt-1 block" style={{ color: pv('cor_fonte_titulos', corFonteTitulos) }}>Título da Seção</span>
-                  <div className="mt-2 flex items-center justify-between">
-                    <span className="text-base font-bold" style={{ color: pv('cor_fonte_titulo_produto', corFonteTituloProduto) }}>Nome do Produto</span>
-                    <span className="text-xs font-medium px-3 py-1.5 rounded-full text-white inline-flex items-center gap-1" style={{ backgroundColor: pv('cor_botao_adicionar', corBotaoAdicionar) }}>＋ Adicionar</span>
+                  <div className="mt-2 p-2 rounded" style={{ backgroundColor: pv('cor_background_cards', corBackgroundCards) }}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-base font-bold" style={{ color: pv('cor_fonte_titulo_produto', corFonteTituloProduto) }}>Nome do Produto</span>
+                      <span className="text-xs font-medium px-3 py-1.5 rounded-full text-white inline-flex items-center gap-1" style={{ backgroundColor: pv('cor_botao_adicionar', corBotaoAdicionar) }}>＋ Adicionar</span>
+                    </div>
                   </div>
+
                 </div>
               </div>
             </div>
