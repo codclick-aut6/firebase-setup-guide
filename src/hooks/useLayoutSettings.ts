@@ -49,6 +49,8 @@ export interface LayoutSettings {
   cor_fonte_botoes: string;
   cor_botao_adicionar: string;
   cor_background_header: string;
+  cor_background_cards: string;
+
   cor_chat_cabecalho: string;
   cor_chat_fonte_cabecalho: string;
   cor_chat_fonte_baloes: string;
@@ -118,6 +120,8 @@ const defaults: LayoutSettings = {
   cor_fonte_botoes: '#1f2937',
   cor_botao_adicionar: '#4CAF50',
   cor_background_header: '#ffffff',
+  cor_background_cards: '#ffffff',
+
   cor_chat_cabecalho: '#ff4400',
   cor_chat_fonte_cabecalho: '#ffffff',
   cor_chat_fonte_baloes: '#050200',
@@ -220,10 +224,12 @@ const fetchLayoutSettings = async (): Promise<LayoutSettingsBundle> => {
 
     const light = { ...defaults };
     const darkOverrides: Partial<LayoutSettings> = {};
+    const seen = new Set<string>();
     let darkMode = false;
 
     data?.forEach((row) => {
       if (!row.valor) return;
+      seen.add(row.chave);
       if (row.chave === 'modo_escuro') {
         darkMode = row.valor === 'true';
       } else if (row.chave.startsWith('dark_')) {
@@ -234,11 +240,19 @@ const fetchLayoutSettings = async (): Promise<LayoutSettingsBundle> => {
       }
     });
 
+    const dark: LayoutSettings = { ...light, ...darkOverrides };
+
+    // Compatibilidade: lojas criadas antes de existir a cor separada dos cards
+    // continuam com o fundo dos itens igual ao do cabeçalho.
+    if (!seen.has('cor_background_cards')) light.cor_background_cards = light.cor_background_header;
+    if (!seen.has(darkKey('cor_background_cards'))) dark.cor_background_cards = dark.cor_background_header;
+
     const bundle: LayoutSettingsBundle = {
       light,
-      dark: { ...light, ...darkOverrides },
+      dark,
       darkMode,
     };
+
     writeCache(bundle);
     return bundle;
   })();

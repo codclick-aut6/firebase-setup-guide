@@ -336,7 +336,7 @@ const MenuItemCard = React.forwardRef<{ triggerClick: (targetSubItemId?: string)
         </div>
       </div>
       ) : (
-      <div className={`food-item h-full rounded-lg overflow-hidden shadow-md p-3 sm:p-4 flex flex-col ${isUnavailable(item) ? 'opacity-50 grayscale' : ''}`} style={{ backgroundColor: settings.cor_background_header, color: settings.cor_fonte }} data-product-id={item.id}>
+      <div className={`food-item h-full rounded-lg overflow-hidden shadow-md p-3 sm:p-4 flex flex-col ${isUnavailable(item) ? 'opacity-50 grayscale' : ''}`} style={{ backgroundColor: settings.cor_background_cards, color: settings.cor_fonte }} data-product-id={item.id}>
         <div
           className={`aspect-[4/3] overflow-hidden rounded-md mb-3 ${isUnavailable(item) ? 'cursor-not-allowed' : 'cursor-pointer'}`}
           onClick={() => {

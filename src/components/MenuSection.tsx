@@ -60,7 +60,7 @@ const MenuSection: React.FC<MenuSectionProps> = ({ title, categoryId, category, 
       </h2>
 
       {variant === "list" ? (
-        <div className="rounded-xl px-3" style={{ backgroundColor: settings.cor_background_header }}>
+        <div className="rounded-xl px-3" style={{ backgroundColor: settings.cor_background_cards }}>
           {visibleItems.map((item) => (
             <MenuItemCard key={item.id} item={item} variant="list" ref={(h) => { if (itemRefs) itemRefs.current[item.id] = h; }} />
           ))}
