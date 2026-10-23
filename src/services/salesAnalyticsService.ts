@@ -998,6 +998,7 @@ export interface SalesReportRow {
   customer: string;
   itemCount: number;
   total: number;
+  status: string;
 }
 
 export const fetchSalesReport = async (
@@ -1010,14 +1011,13 @@ export const fetchSalesReport = async (
   const { startIso, endIso } = buildUtcRangeFromLocalDates(startDate, endDate);
 
   const { data, error } = await cachedFetch(
-    `orders|report|${startIso}|${endIso}|${sourceFilter ?? ""}|${campaignFilter ?? ""}|${locationKey(location)}`,
+    `orders|report2|${startIso}|${endIso}|${sourceFilter ?? ""}|${campaignFilter ?? ""}|${locationKey(location)}`,
     async () => {
       let query = supabase
         .from("pedidos_sabor_delivery" as any)
         .select("id, data_criacao, codigo_pedido, codigo_curto, nome_cliente, valor_total, itens, status_atual, utm_source, utm_campaign")
         .gte("data_criacao", startIso)
         .lte("data_criacao", endIso)
-        .neq("status_atual", "cancelled")
         .order("data_criacao", { ascending: false });
 
       if (sourceFilter) query = query.eq("utm_source", sourceFilter);
@@ -1043,6 +1043,7 @@ export const fetchSalesReport = async (
         customer: String(r.nome_cliente ?? "—"),
         itemCount,
         total: Number(r.valor_total ?? 0),
+        status: String(r.status_atual ?? ""),
       };
     });
 };

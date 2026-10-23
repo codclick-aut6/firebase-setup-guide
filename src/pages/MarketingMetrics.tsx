@@ -847,7 +847,7 @@ const MarketingMetrics: React.FC = () => {
         key,
         label: format(new Date(`${key}-01T00:00:00`), "MMMM yyyy"),
         rows,
-        total: rows.reduce((acc, r) => acc + r.total, 0),
+        total: rows.reduce((acc, r) => acc + (r.status === "cancelled" ? 0 : r.total), 0),
       }));
   }, [salesReportRows]);
 
@@ -1516,15 +1516,35 @@ const MarketingMetrics: React.FC = () => {
                   ) : (
                     <ul className="divide-y divide-border sm:columns-2 sm:gap-10 [&>li]:break-inside-avoid">
                       {currentReportMonth.rows.map((row) => (
-                        <li key={row.id} className="flex items-start justify-between gap-3 py-3">
+                        <li
+                          key={row.id}
+                          className={`flex items-start justify-between gap-3 py-3 ${row.status === "cancelled" ? "opacity-70" : ""}`}
+                        >
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{row.customer}</p>
+                            <p
+                              className={`text-sm font-medium truncate ${
+                                row.status === "cancelled"
+                                  ? "text-muted-foreground line-through"
+                                  : "text-foreground"
+                              }`}
+                            >
+                              {row.customer}
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               {format(new Date(row.dateIso), "dd/MM/yyyy HH:mm")} · #{row.code}
+                              {row.status === "cancelled" && " · Cancelado"}
                             </p>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="text-sm font-semibold">{formatBRL(row.total)}</p>
+                            <p
+                              className={`text-sm font-semibold ${
+                                row.status === "cancelled"
+                                  ? "text-muted-foreground line-through"
+                                  : ""
+                              }`}
+                            >
+                              {formatBRL(row.total)}
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               {row.itemCount} {row.itemCount === 1 ? "item" : "itens"}
                             </p>
@@ -1538,8 +1558,18 @@ const MarketingMetrics: React.FC = () => {
                 {currentReportMonth && !salesReportLoading && (
                   <div className="flex items-center justify-between border-t border-border px-6 py-3 text-xs shrink-0 bg-card">
                     <span className="text-muted-foreground">
-                      {currentReportMonth.rows.length}{" "}
-                      {currentReportMonth.rows.length === 1 ? "pedido" : "pedidos"}
+                      {(() => {
+                        const valid = currentReportMonth.rows.filter((r) => r.status !== "cancelled").length;
+                        const cancelled = currentReportMonth.rows.length - valid;
+                        return (
+                          <>
+                            {valid} {valid === 1 ? "pedido" : "pedidos"}
+                            {cancelled > 0
+                              ? ` · ${cancelled} cancelado${cancelled === 1 ? "" : "s"}`
+                              : ""}
+                          </>
+                        );
+                      })()}
                     </span>
                     <span className="font-semibold">{formatBRL(currentReportMonth.total)}</span>
                   </div>
