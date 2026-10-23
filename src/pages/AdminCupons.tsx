@@ -925,6 +925,20 @@ export default function AdminCupons() {
                 }
               />
             </div>
+            <div>
+              <Label>Campanha UTM vinculada (utm_campaign)</Label>
+              <Input
+                placeholder="ex: promo_sexta"
+                value={(form as any).utm_campaign || ""}
+                onChange={(e) =>
+                  setForm({ ...form, utm_campaign: e.target.value.trim() || null } as any)
+                }
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Quem entrar pelo link com <code>?utm_campaign=</code> igual a este valor recebe o cupom automaticamente.
+                Também funciona o link direto <code>?cupom={form.nome || "CODIGO"}</code>.
+              </p>
+            </div>
             <div className="flex items-center space-x-2">
               <Switch
                 checked={form.primeira_compra_apenas || false}
@@ -1024,6 +1038,11 @@ export default function AdminCupons() {
                 </div>
               )}
 
+              {(c as any).utm_campaign && (
+                <p className="text-xs font-semibold text-primary bg-primary/10 rounded px-2 py-1 inline-block mr-1">
+                  🔗 Automático na campanha: {(c as any).utm_campaign}
+                </p>
+              )}
               {c.primeira_compra_apenas && (
                 <p className="text-xs font-semibold text-primary bg-primary/10 rounded px-2 py-1 inline-block">
                   ⭐ Válido apenas para primeira compra
