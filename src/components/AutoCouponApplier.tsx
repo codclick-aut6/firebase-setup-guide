@@ -15,17 +15,26 @@ export default function AutoCouponApplier() {
     if (ran.current) return;
     ran.current = true;
 
-    const urlCode = new URLSearchParams(window.location.search).get("cupom")?.trim();
-    const campaign = getUtmParams().utm_campaign?.trim();
+    const search = new URLSearchParams(window.location.search);
+    const urlCode = search.get("cupom")?.trim();
+    // Lê direto da URL: a captura das UTMs para a sessão pode ainda não ter rodado.
+    const urlCampaign = search.get("utm_campaign")?.trim();
+    const campaign = urlCampaign || getUtmParams().utm_campaign?.trim();
     const key = `${urlCode || ""}|${campaign || ""}`;
     if (!urlCode && !campaign) return;
-    if (!urlCode && sessionStorage.getItem(DONE_KEY) === key) return;
+    if (!urlCode && !urlCampaign && sessionStorage.getItem(DONE_KEY) === key) return;
     if (appliedCoupon && !urlCode) return;
 
     (async () => {
-      let query = supabase.from("cupons" as any).select("*").eq("ativo", true);
-      query = urlCode ? query.ilike("nome", urlCode) : query.ilike("utm_campaign", campaign!);
-      const { data } = await query.limit(1);
+      let data: any[] | null = null;
+      if (urlCode) {
+        ({ data } = await supabase.from("cupons" as any).select("*").eq("ativo", true).ilike("nome", urlCode).limit(1) as any);
+      } else {
+        ({ data } = await supabase.from("cupons" as any).select("*").eq("ativo", true).ilike("utm_campaign", campaign!).limit(1) as any);
+        if (!data?.length) {
+          ({ data } = await supabase.from("cupons" as any).select("*").eq("ativo", true).ilike("nome", campaign!).limit(1) as any);
+        }
+      }
       const c = (data as any[])?.[0];
       sessionStorage.setItem(DONE_KEY, key);
       if (!c) return;
