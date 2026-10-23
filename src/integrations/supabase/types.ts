@@ -177,6 +177,7 @@ export type Database = {
           tipo: string
           usos: number | null
           usos_por_usuario: number | null
+          utm_campaign: string | null
           valor: number
           valor_minimo_pedido: number | null
         }
@@ -196,6 +197,7 @@ export type Database = {
           tipo: string
           usos?: number | null
           usos_por_usuario?: number | null
+          utm_campaign?: string | null
           valor: number
           valor_minimo_pedido?: number | null
         }
@@ -215,6 +217,7 @@ export type Database = {
           tipo?: string
           usos?: number | null
           usos_por_usuario?: number | null
+          utm_campaign?: string | null
           valor?: number
           valor_minimo_pedido?: number | null
         }
