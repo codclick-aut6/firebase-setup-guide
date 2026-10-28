@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import MenuItemCard from "@/components/MenuItemCard";
 import { Plus } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { getAllMenuItems } from "@/services/menuItemService";
@@ -8,8 +8,16 @@ import { formatCurrency } from "@/lib/utils";
 import type { MenuItem } from "@/types/menu";
 
 const CartSuggestions: React.FC = () => {
-  const { cartItems, addToCart, setIsCartOpen } = useCart();
-  const navigate = useNavigate();
+  const { cartItems, addToCart } = useCart();
+  const [flowItem, setFlowItem] = useState<MenuItem | null>(null);
+  const flowRef = useRef<{ triggerClick: (id?: string) => void } | null>(null);
+  const [flowNonce, setFlowNonce] = useState(0);
+
+  useEffect(() => {
+    if (!flowItem) return;
+    const t = setTimeout(() => flowRef.current?.triggerClick(), 50);
+    return () => clearTimeout(t);
+  }, [flowItem, flowNonce]);
   const [regras, setRegras] = useState<SugestaoRegra[]>([]);
   const [menu, setMenu] = useState<MenuItem[]>([]);
 
@@ -23,7 +31,13 @@ const CartSuggestions: React.FC = () => {
     [regras, cartItems, menu],
   );
 
-  if (!itens.length) return null;
+  const hiddenFlow = flowItem ? (
+    <div className="hidden">
+      <MenuItemCard key={flowItem.id} ref={flowRef} item={flowItem} />
+    </div>
+  ) : null;
+
+  if (!itens.length) return hiddenFlow;
 
   const handleAdd = (item: MenuItem) => {
     const precisaEscolher =
@@ -31,8 +45,8 @@ const CartSuggestions: React.FC = () => {
     const desconto = descontos[item.id] ?? 0;
     if (precisaEscolher) {
       try { sessionStorage.setItem(UPSELL_FLAG, JSON.stringify({ id: item.id, desconto })); } catch { /* ignore */ }
-      setIsCartOpen(false);
-      navigate(`/cardapio?item=${item.id}`);
+      setFlowItem(item);
+      setFlowNonce((n) => n + 1);
       return;
     }
     addToCart(desconto > 0 ? ({ ...item, price: aplicarDesconto(item.price, desconto), upsellDiscount: desconto } as any) : item);
@@ -40,6 +54,7 @@ const CartSuggestions: React.FC = () => {
 
   return (
     <div className="mb-6">
+      {hiddenFlow}
       <h3 className="font-semibold text-sm mb-2">{titulo}</h3>
       <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-1 px-1">
         {itens.map((item) => (
