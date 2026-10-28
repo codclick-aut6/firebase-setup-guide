@@ -83,5 +83,18 @@ export const deleteVariation = async (id: string): Promise<void> => {
   if (!id || id.trim() === "") throw new Error("ID da variação é obrigatório para exclusão");
   const { error } = await supabase.from("variations").delete().eq("id", id);
   if (error) throw new Error(`Falha ao deletar variação: ${error.message}`);
+  // Remove a variação excluída de todos os grupos que a referenciam
+  const { data: groups } = await supabase
+    .from("variation_groups")
+    .select("id, variations")
+    .contains("variations", [id]);
+  await Promise.all(
+    (groups || []).map((g: any) =>
+      supabase
+        .from("variation_groups")
+        .update({ variations: (g.variations || []).filter((v: string) => v !== id) })
+        .eq("id", g.id)
+    )
+  );
   invalidateVariationsCache();
 };
