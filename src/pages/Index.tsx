@@ -1,3 +1,4 @@
+import MenuItemCard from "@/components/MenuItemCard";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { getAllMenuItems } from "@/services/menuItemService";
 import { getAllCategories } from "@/services/categoryService";
@@ -46,6 +47,18 @@ const Index = () => {
   const { firstHalf, cancelHalfPizza } = useHalfPizza();
   const itemRefs = useRef<Record<string, { triggerClick: (targetSubItemId?: string) => void } | null>>({});
   const deepLinkHandled = useRef(false);
+  const [hiddenDeepLinkItem, setHiddenDeepLinkItem] = useState<any>(null);
+  const hiddenDeepLinkRef = useRef<{ triggerClick: (id?: string) => void } | null>(null);
+  useEffect(() => {
+    if (!hiddenDeepLinkItem) return;
+    const t = setTimeout(() => {
+      hiddenDeepLinkRef.current?.triggerClick();
+      searchParams.delete("item");
+      setSearchParams(searchParams, { replace: true });
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hiddenDeepLinkItem]);
   const menuVisitTracked = useRef(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const isProgrammaticScroll = useRef(false);
@@ -183,7 +196,10 @@ const Index = () => {
           return;
         }
       }
-      if (attempts++ < 50) setTimeout(tryOpen, 100);
+      if (attempts++ < 30) { setTimeout(tryOpen, 100); return; }
+      // Produto fora do cardápio visível (categoria oculta): abre via card invisível
+      deepLinkHandled.current = true;
+      setHiddenDeepLinkItem(matchedItem);
     };
     tryOpen();
   }, [menuItems, searchParams, setSearchParams]);
@@ -324,6 +340,11 @@ const Index = () => {
 
   return (
     <div style={{ backgroundColor: settings.cor_background, color: settings.cor_fonte, minHeight: '100vh' }}>
+      {hiddenDeepLinkItem && (
+        <div className="hidden">
+          <MenuItemCard key={hiddenDeepLinkItem.id} ref={hiddenDeepLinkRef} item={hiddenDeepLinkItem} />
+        </div>
+      )}
       
       
       {/* HEADER COMPACTADO */}
