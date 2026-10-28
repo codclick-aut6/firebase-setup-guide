@@ -33,7 +33,7 @@ const minPriceOf = (i: MenuItem) => {
 };
 
 const MenuItemCard = React.forwardRef<{ triggerClick: (targetSubItemId?: string) => void }, MenuItemCardProps>(({ item, isTwoColumns: isTwoColumnsProp, priority = false, variant = "card" }, ref) => {
-  const { addToCart, addItem } = useCart();
+  const { addToCart, addItem, setIsCartOpen } = useCart();
   const { settings } = useLayoutSettings();
   const isTwoColumns = isTwoColumnsProp ?? settings.layout_colunas_mobile === '2';
   const { firstHalf, startHalfPizza, cancelHalfPizza } = useHalfPizza();
@@ -285,11 +285,13 @@ const MenuItemCard = React.forwardRef<{ triggerClick: (targetSubItemId?: string)
     });
     setTempCombinedItem(null);
     setSubItem(null);
+    setTimeout(() => setIsCartOpen(true), 300);
   };
 
   const handleQuantityConfirm = (menuItem: MenuItem & { selectedSize?: PizzaSize }, quantity: number) => {
     addItem({ ...menuItem, quantity });
     setSubItem(null);
+    setTimeout(() => setIsCartOpen(true), 300);
   };
 
   const handlePizzaCombination = (combinedItem: MenuItem) => {
