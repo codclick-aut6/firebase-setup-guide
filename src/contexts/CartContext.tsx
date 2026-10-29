@@ -1,3 +1,4 @@
+import { itemMatchesRequirement } from "@/utils/couponMatch";
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CartItem, MenuItem, SelectedVariationGroup, PizzaBorder, PizzaSize } from "@/types/menu";
@@ -18,6 +19,7 @@ interface ProdutoRef {
   product_name: string;
   // Quando tipo === "categoria", category_id/name identificam a categoria exigida
   category_id?: string;
+  category_ids?: string[];
   category_name?: string;
   quantidade: number;
   // Apenas para produto_brinde: modo "escolha" permite oferecer várias opções
@@ -330,11 +332,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return requeridos.some((req) => {
       const ehCategoria = req.tipo === "categoria";
       const totalNoCarrinho = elegiveis
-        .filter((i) =>
-          ehCategoria
-            ? req.category_id && i.category === req.category_id
-            : i.id === req.product_id
-        )
+        .filter((i: any) => itemMatchesRequirement(i, req))
         .reduce((sum, i) => sum + (i.quantity || 0), 0);
       return totalNoCarrinho >= req.quantidade;
     });
@@ -355,11 +353,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!req.quantidade || req.quantidade <= 0) continue;
       const ehCategoria = req.tipo === "categoria";
       const totalNoCarrinho = elegiveis
-        .filter((i) =>
-          ehCategoria
-            ? req.category_id && i.category === req.category_id
-            : i.id === req.product_id
-        )
+        .filter((i: any) => itemMatchesRequirement(i, req))
         .reduce((sum, i) => sum + (i.quantity || 0), 0);
       const ciclos = Math.floor(totalNoCarrinho / req.quantidade);
       // Regra "qualquer um da lista": usa o requisito que rende mais ciclos

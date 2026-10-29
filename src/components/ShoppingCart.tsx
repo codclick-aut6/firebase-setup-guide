@@ -1,3 +1,4 @@
+import { itemMatchesRequirement } from "@/utils/couponMatch";
 import React, { useState, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { X, Minus, Plus, ShoppingBag, Trash2, Tag, Gift, ArrowUp, Home } from "lucide-react";
@@ -258,11 +259,7 @@ const ShoppingCart: React.FC = () => {
           reqs.some((req: any) => {
             const ehCategoria = req.tipo === "categoria";
             const total = elegiveis
-              .filter((i: any) =>
-                ehCategoria
-                  ? req.category_id && i.category === req.category_id
-                  : i.id === req.product_id
-              )
+              .filter((i: any) => itemMatchesRequirement(i, req))
               .reduce((s: number, i: any) => s + (i.quantity || 0), 0);
             return total >= req.quantidade;
           }));
@@ -772,11 +769,7 @@ const ShoppingCart: React.FC = () => {
                         ? Math.min(
                             ...requeridos.map((req: any) => {
                               const totalNoCarrinho = elegiveis
-                                .filter((item: any) =>
-                                  req.tipo === "categoria"
-                                    ? req.category_id && item.category === req.category_id
-                                    : item.id === req.product_id
-                                )
+                                .filter((item: any) => itemMatchesRequirement(item, req))
                                 .reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
                               return Math.floor(totalNoCarrinho / Math.max(1, req.quantidade || 1));
                             })
