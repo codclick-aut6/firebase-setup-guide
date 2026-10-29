@@ -16,3 +16,28 @@ export function itemMatchesRequirement(item: any, req: any): boolean {
   ].filter(Boolean);
   return itemCats.some((c) => ids.includes(c));
 }
+
+// Modo de concessão do brinde: "por_pedido" entrega a quantidade configurada uma
+// única vez por pedido; "acumulativo" multiplica a cada X itens exigidos.
+// Cupons antigos sem o campo continuam acumulativos.
+export type GiftConcessao = "por_pedido" | "acumulativo";
+
+export function computeGiftCycles(items: any[], requeridos: any[], concessao?: GiftConcessao | null): number {
+  const elegiveis = (items || []).filter((i: any) => !String(i?.id).startsWith("gift-"));
+  let ciclos: number;
+  if (!requeridos?.length) {
+    ciclos = 1;
+  } else {
+    let melhor = -1;
+    for (const req of requeridos) {
+      const q = Number(req?.quantidade) || 0;
+      if (q <= 0) continue;
+      const total = elegiveis
+        .filter((i: any) => itemMatchesRequirement(i, req))
+        .reduce((s: number, i: any) => s + (i.quantity || 0), 0);
+      melhor = Math.max(melhor, Math.floor(total / q));
+    }
+    ciclos = Math.max(0, melhor);
+  }
+  return concessao === "por_pedido" ? Math.min(ciclos, 1) : ciclos;
+}
