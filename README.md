@@ -1,5 +1,6 @@
 
 ----------------------------------------------------
-**V.1.169.1** - codclick-aut6/firebase-setup-guide - 27/10/2026**
+**V.1.170.1** - codclick-aut6/firebase-setup-guide - 27/10/2026**
 ----------------------------------------------------
-- Agora quando o cliente adiciona um produto no cardápio, o carrinho abre sozinho, já com o item dentro, em vez de voltar para o cardápio. Isso vale também para pizza meio a meio.
+- Correção de bug: Ao apagar uma variação, ela continuava existindo dentro do grupo de variações como "variação não encontrada", impossibilitando de ser apagada. Agora, quando você apaga uma variação, ela sai sozinha de todos os grupos onde estava, e o aviso "Variação não encontrada" não aparece mais.
+  
