@@ -1,4 +1,4 @@
-import { itemMatchesRequirement } from "@/utils/couponMatch";
+import { itemMatchesRequirement, computeGiftCycles } from "@/utils/couponMatch";
 import React, { useState } from "react";
 import { Tag, Gift, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -254,16 +254,7 @@ const CouponField: React.FC = () => {
             appliedCoupon.produto_brinde?.modo === "escolha" && (() => {
               const requeridos = appliedCoupon.produtos_requeridos || [];
               const elegiveis = cartItems.filter((item: any) => !String(item.id).startsWith("gift-"));
-              const ciclos = requeridos.length
-                ? Math.min(
-                    ...requeridos.map((req: any) => {
-                      const totalNoCarrinho = elegiveis
-                        .filter((item: any) => itemMatchesRequirement(item, req))
-                        .reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
-                      return Math.floor(totalNoCarrinho / Math.max(1, req.quantidade || 1));
-                    })
-                  )
-                : 1;
+              const ciclos = computeGiftCycles(cartItems, requeridos, appliedCoupon.produto_brinde?.concessao);
               const totalAlvo = (appliedCoupon.produto_brinde?.quantidade || 1) * Math.max(0, ciclos);
               const opcoes = appliedCoupon.produto_brinde?.opcoes || [];
               const escolhas = appliedCoupon.brindes_escolhidos || [];

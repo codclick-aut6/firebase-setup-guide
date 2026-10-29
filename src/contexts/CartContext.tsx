@@ -1,4 +1,4 @@
-import { itemMatchesRequirement } from "@/utils/couponMatch";
+import { itemMatchesRequirement, computeGiftCycles } from "@/utils/couponMatch";
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CartItem, MenuItem, SelectedVariationGroup, PizzaBorder, PizzaSize } from "@/types/menu";
@@ -26,6 +26,7 @@ interface ProdutoRef {
   // ao cliente, que escolhe uma delas como brinde.
   modo?: "fixo" | "escolha";
   opcoes?: { product_id: string; product_name: string }[];
+  concessao?: "por_pedido" | "acumulativo";
 }
 
 interface AppliedCoupon {
@@ -403,7 +404,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     coupon: AppliedCoupon,
     items: CartItem[]
   ): CartItem[] => {
-    const ciclos = computeGiftMultiplier(items, coupon.produtos_requeridos || []);
+    const minimo = Number(coupon.valor_minimo_pedido) || 0;
+    if (minimo > 0) {
+      const sub = items.filter((i) => !isGiftItem(i)).reduce((s, i) => s + (Number(i.price) || 0) * (i.quantity || 0), 0);
+      if (sub + 0.005 < minimo) return [];
+    }
+    const ciclos = computeGiftCycles(items, coupon.produtos_requeridos || [], coupon.produto_brinde?.concessao);
     if (ciclos <= 0) return [];
     const quantidadePorCiclo = coupon.produto_brinde?.quantidade || 1;
     const totalDisponivel = quantidadePorCiclo * ciclos;

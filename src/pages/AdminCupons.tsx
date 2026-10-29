@@ -42,6 +42,7 @@ type ProdutoRef = {
   quantidade: number;
   // Apenas para produto_brinde: modo "escolha" oferece várias opções
   modo?: "fixo" | "escolha";
+  concessao?: "por_pedido" | "acumulativo";
   opcoes?: { product_id: string; product_name: string }[];
 };
 
@@ -754,6 +755,35 @@ export default function AdminCupons() {
                         <SelectItem value="escolha">Grupo de opções (cliente escolhe)</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">Modo de concessão do brinde</Label>
+                    <Select
+                      value={form.produto_brinde?.concessao || "acumulativo"}
+                      onValueChange={(v) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          produto_brinde: {
+                            ...(prev.produto_brinde || ({ product_id: "", product_name: "", quantidade: 1, modo: "fixo" } as ProdutoRef)),
+                            concessao: v as "por_pedido" | "acumulativo",
+                          } as ProdutoRef,
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="por_pedido">Fixo por pedido (uma vez só)</SelectItem>
+                        <SelectItem value="acumulativo">A cada X itens exigidos (acumulativo)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {(form.produto_brinde?.concessao || "acumulativo") === "por_pedido"
+                        ? "O cliente recebe a quantidade do brinde uma única vez, quando o pedido atende às regras (inclusive o valor mínimo)."
+                        : "O brinde se multiplica: a cada quantidade exigida de itens participantes, o cliente ganha mais um brinde."}
+                    </p>
                   </div>
 
                   {(form.produto_brinde?.modo || "fixo") === "fixo" ? (
