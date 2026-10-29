@@ -1,6 +1,7 @@
 
 ----------------------------------------------------
-**V.1.170.1** - codclick-aut6/firebase-setup-guide - 27/10/2026**
+**V.1.171.1** - codclick-aut6/firebase-setup-guide - 29/10/2026**
 ----------------------------------------------------
-- Correção de bug: Ao apagar uma variação, ela continuava existindo dentro do grupo de variações como "variação não encontrada", impossibilitando de ser apagada. Agora, quando você apaga uma variação, ela sai sozinha de todos os grupos onde estava, e o aviso "Variação não encontrada" não aparece mais.
-  
+- Correção de bug: Cupom compre e ganhe não permitia adição do brinde no carrinho.
+A validação no carrinho só olhava o campo individual:
+A lógica do carrinho (CartContext, ShoppingCart e CouponField) só comparava item.category === req.category_id. Como nenhum lanche ou pizza tem como categoria principal "OS MAIS QUERIDOS" (eles são "hambúrgueres", "pizzas", etc.), ao adicionar qualquer item, a contagem de produtos válidos resultava em 0.
