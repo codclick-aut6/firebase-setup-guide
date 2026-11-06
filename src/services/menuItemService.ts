@@ -230,3 +230,10 @@ export const cleanupPopularItems = async (): Promise<{ cleaned: number; total: n
 export const seedMenuItems = async (menuItems: MenuItem[]): Promise<void> => {
   for (const item of menuItems) await saveMenuItem(item);
 };
+
+export const setMenuItemsAvailability = async (ids: string[], available: boolean): Promise<void> => {
+  if (ids.length === 0) return;
+  const { error } = await supabase.from("menu_items").update({ available }).in("id", ids);
+  if (error) throw error;
+  invalidateMenuItemsCache();
+};

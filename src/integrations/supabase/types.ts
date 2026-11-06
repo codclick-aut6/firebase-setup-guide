@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
@@ -185,7 +185,7 @@ export type Database = {
           limite_uso: number | null
           nome: string
           origem: string | null
-          primeira_compra_apenas: boolean
+          primeira_compra_apenas: boolean | null
           produto_brinde: Json | null
           produtos_requeridos: Json | null
           tipo: string
@@ -205,7 +205,7 @@ export type Database = {
           limite_uso?: number | null
           nome: string
           origem?: string | null
-          primeira_compra_apenas?: boolean
+          primeira_compra_apenas?: boolean | null
           produto_brinde?: Json | null
           produtos_requeridos?: Json | null
           tipo: string
@@ -225,7 +225,7 @@ export type Database = {
           limite_uso?: number | null
           nome?: string
           origem?: string | null
-          primeira_compra_apenas?: boolean
+          primeira_compra_apenas?: boolean | null
           produto_brinde?: Json | null
           produtos_requeridos?: Json | null
           tipo?: string
@@ -376,6 +376,9 @@ export type Database = {
           nome: string
           numero: string | null
           pais: string | null
+          pix_chave: string | null
+          pix_cidade: string | null
+          pix_nome_recebedor: string | null
           rua: string | null
           sobre: string | null
           superfrete_sandbox: boolean
@@ -404,6 +407,9 @@ export type Database = {
           nome: string
           numero?: string | null
           pais?: string | null
+          pix_chave?: string | null
+          pix_cidade?: string | null
+          pix_nome_recebedor?: string | null
           rua?: string | null
           sobre?: string | null
           superfrete_sandbox?: boolean
@@ -432,6 +438,9 @@ export type Database = {
           nome?: string
           numero?: string | null
           pais?: string | null
+          pix_chave?: string | null
+          pix_cidade?: string | null
+          pix_nome_recebedor?: string | null
           rua?: string | null
           sobre?: string | null
           superfrete_sandbox?: boolean
@@ -512,6 +521,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fidelidade_historico_regra_id_fkey"
+            columns: ["regra_id"]
+            isOneToOne: false
+            referencedRelation: "fidelidade_regras"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fidelidade_historico_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -530,7 +546,6 @@ export type Database = {
           regra_id: string | null
           telefone_cliente: string
           ultima_atualizacao: string | null
-          user_id: string | null
           valor_gasto_pizzas: number
         }
         Insert: {
@@ -542,7 +557,6 @@ export type Database = {
           regra_id?: string | null
           telefone_cliente: string
           ultima_atualizacao?: string | null
-          user_id?: string | null
           valor_gasto_pizzas?: number
         }
         Update: {
@@ -554,7 +568,6 @@ export type Database = {
           regra_id?: string | null
           telefone_cliente?: string
           ultima_atualizacao?: string | null
-          user_id?: string | null
           valor_gasto_pizzas?: number
         }
         Relationships: []
@@ -655,57 +668,6 @@ export type Database = {
           check?: string | null
           created_at?: string
           id?: number
-        }
-        Relationships: []
-      }
-      menu_agente: {
-        Row: {
-          available: boolean | null
-          category: string
-          created_at: string
-          deeplink: string | null
-          description: string
-          frete_gratis: boolean | null
-          id: string
-          image: string
-          max_sabores: number | null
-          name: string
-          pizza_borders: Json | null
-          price: number
-          tipo: string | null
-          updated_at: string
-        }
-        Insert: {
-          available?: boolean | null
-          category: string
-          created_at?: string
-          deeplink?: string | null
-          description?: string
-          frete_gratis?: boolean | null
-          id: string
-          image?: string
-          max_sabores?: number | null
-          name: string
-          pizza_borders?: Json | null
-          price?: number
-          tipo?: string | null
-          updated_at?: string
-        }
-        Update: {
-          available?: boolean | null
-          category?: string
-          created_at?: string
-          deeplink?: string | null
-          description?: string
-          frete_gratis?: boolean | null
-          id?: string
-          image?: string
-          max_sabores?: number | null
-          name?: string
-          pizza_borders?: Json | null
-          price?: number
-          tipo?: string | null
-          updated_at?: string
         }
         Relationships: []
       }
@@ -1537,31 +1499,56 @@ export type Database = {
           value: string
         }[]
       }
-      mkt_avg_visit_duration: {
-        Args: {
-          p_campaign?: string
-          p_cidade?: string
-          p_end: string
-          p_source?: string
-          p_start: string
-        }
-        Returns: number
-      }
-      mkt_bounce_rate: {
-        Args: {
-          p_campaign?: string
-          p_cidade?: string
-          p_end: string
-          p_source?: string
-          p_start: string
-        }
-        Returns: {
-          bounced_new: number
-          bounced_returning: number
-          bounced_sessions: number
-          total_sessions: number
-        }[]
-      }
+      mkt_avg_visit_duration:
+        | {
+            Args: {
+              p_campaign?: string
+              p_end: string
+              p_source?: string
+              p_start: string
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              p_campaign?: string
+              p_cidade?: string
+              p_end: string
+              p_source?: string
+              p_start: string
+            }
+            Returns: number
+          }
+      mkt_bounce_rate:
+        | {
+            Args: {
+              p_campaign?: string
+              p_end: string
+              p_source?: string
+              p_start: string
+            }
+            Returns: {
+              bounced_new: number
+              bounced_returning: number
+              bounced_sessions: number
+              total_sessions: number
+            }[]
+          }
+        | {
+            Args: {
+              p_campaign?: string
+              p_cidade?: string
+              p_end: string
+              p_source?: string
+              p_start: string
+            }
+            Returns: {
+              bounced_new: number
+              bounced_returning: number
+              bounced_sessions: number
+              total_sessions: number
+            }[]
+          }
       mkt_cidade_options: {
         Args: never
         Returns: {
