@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Edit, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle, RefreshCw, Copy, Grid3X3, List, Search, X, ArrowUp, ArrowDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { deleteMenuItem, cleanupPopularItems, updateMenuItemsOrder } from "@/services/menuItemService";
+import { deleteMenuItem, cleanupPopularItems, updateMenuItemsOrder, setMenuItemsAvailability } from "@/services/menuItemService";
 import { EditMenuItemModal } from "./EditMenuItemModal";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useLayoutSettings, saveLayoutSetting } from "@/hooks/useLayoutSettings";
 
 
@@ -279,6 +280,46 @@ export const MenuItemsTab = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onlyUnavailable]);
 
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const visibleIds = useMemo(
+    () => Array.from(new Set(filteredByCategory.flatMap((g) => g.items.map((i) => i.id)))),
+    [filteredByCategory]
+  );
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+  const toggleSelect = (id: string) =>
+    setSelectedIds((prev) => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  const toggleSelectAll = () =>
+    setSelectedIds((prev) => {
+      const n = new Set(prev);
+      if (allVisibleSelected) visibleIds.forEach((id) => n.delete(id));
+      else visibleIds.forEach((id) => n.add(id));
+      return n;
+    });
+  const handleBulkAvailability = async (available: boolean) => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    try {
+      setBulkSaving(true);
+      await setMenuItemsAvailability(ids, available);
+      toast({
+        title: "Produtos atualizados",
+        description: `${ids.length} produto(s) marcado(s) como ${available ? "disponíveis" : "indisponíveis"}.`,
+      });
+      setSelectedIds(new Set());
+      onDataChange();
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Erro", description: "Não foi possível atualizar os produtos.", variant: "destructive" });
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
   const totalMatches = useMemo(
     () => filteredByCategory.reduce((acc, g) => acc + g.items.length, 0),
     [filteredByCategory]
@@ -538,6 +579,27 @@ export const MenuItemsTab = ({
       Novo Item
     </Button>
   </div>
+
+  <div className="flex flex-wrap items-center gap-2 mt-3 rounded-md border bg-muted/40 p-2">
+    <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+      <Checkbox checked={allVisibleSelected} onCheckedChange={toggleSelectAll} disabled={visibleIds.length === 0} />
+      {allVisibleSelected ? "Desmarcar todos" : "Marcar todos"} ({visibleIds.length})
+    </label>
+    <span className="text-sm text-muted-foreground">{selectedIds.size} selecionado(s)</span>
+    {selectedIds.size > 0 && (
+      <div className="flex flex-wrap gap-2 ml-auto">
+        <Button size="sm" variant="destructive" disabled={bulkSaving} onClick={() => handleBulkAvailability(false)}>
+          Tornar Indisponíveis
+        </Button>
+        <Button size="sm" disabled={bulkSaving} onClick={() => handleBulkAvailability(true)}>
+          Tornar Disponíveis
+        </Button>
+        <Button size="sm" variant="ghost" disabled={bulkSaving} onClick={() => setSelectedIds(new Set())}>
+          Limpar seleção
+        </Button>
+      </div>
+    )}
+  </div>
 </div>
 
       
@@ -578,7 +640,10 @@ export const MenuItemsTab = ({
                       const isDeleting = deletingItems.has(item.id);
                       return (
                         <Card id={`admin-item-${item.id}`} key={`${item.id}-${index}`} className={`overflow-hidden scroll-mt-40 ${isDuplicate ? 'border-red-300 bg-red-50' : ''} ${isDeleting ? 'opacity-50' : ''} ${highlightId === item.id ? 'ring-2 ring-primary' : ''}`}>
-                          <div className="h-40 bg-gray-200">
+                          <div className="h-40 bg-gray-200 relative">
+                            <div className="absolute top-2 left-2 z-10 rounded bg-background/90 p-1 shadow">
+                              <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} aria-label={`Selecionar ${item.name}`} />
+                            </div>
                             <img
                               src={item.image}
                               alt={item.name}
@@ -703,6 +768,7 @@ export const MenuItemsTab = ({
                     <table className="w-full text-sm">
                       <thead className="bg-muted">
                         <tr>
+                          <th className="p-3 w-10"></th>
                           <th className="text-left p-3 font-medium w-12">Img</th>
                           <th className="text-left p-3 font-medium">Nome</th>
                           <th className="text-left p-3 font-medium hidden md:table-cell">Descrição</th>
@@ -718,6 +784,9 @@ export const MenuItemsTab = ({
                           const isDeleting = deletingItems.has(item.id);
                           return (
                             <tr id={`admin-item-${item.id}`} key={`${item.id}-${index}`} className={`border-t hover:bg-muted/50 scroll-mt-40 ${isDuplicate ? 'bg-red-50' : ''} ${isDeleting ? 'opacity-50' : ''} ${highlightId === item.id ? 'ring-2 ring-inset ring-primary bg-primary/5' : ''}`}>
+                              <td className="p-3">
+                                <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} aria-label={`Selecionar ${item.name}`} />
+                              </td>
                               <td className="p-3">
                                 <img
                                   src={item.image}
