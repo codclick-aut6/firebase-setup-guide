@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { parseStoreMode, resolveStoreOperation, STORE_MODE_KEY, type StoreMode } from "@/utils/storeOperation";
 
 export type DayHours = { open: string; close: string; closed: boolean };
 export type WeekSchedule = Record<string, DayHours>;
@@ -70,43 +72,63 @@ export const getStoreStatusLabel = (schedule: WeekSchedule, now: Date = new Date
 };
 
 export const useStoreOpen = () => {
-  const [schedule, setSchedule] = useState<WeekSchedule | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await supabase
-          .from("empresa_info")
-          .select("horarios_funcionamento")
-          .limit(1)
-          .maybeSingle();
-        if (cancelled) return;
-        const h = (data as any)?.horarios_funcionamento as WeekSchedule | null;
-        setSchedule(h && typeof h === "object" ? { ...DEFAULT_SCHEDULE, ...h } : DEFAULT_SCHEDULE);
-      } catch {
-        if (!cancelled) setSchedule(DEFAULT_SCHEDULE);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const hoursQuery = useQuery({
+    queryKey: ["store-hours"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("empresa_info")
+        .select("horarios_funcionamento").limit(1).maybeSingle();
+      if (error) throw error;
+      const hours = data?.horarios_funcionamento;
+      return hours && typeof hours === "object" && !Array.isArray(hours)
+        ? { ...DEFAULT_SCHEDULE, ...hours } as WeekSchedule : DEFAULT_SCHEDULE;
+    },
+    staleTime: 60000,
+    refetchInterval: 60000,
+  });
+  const modeQuery = useQuery({
+    queryKey: ["store-operation-mode"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("configuracoes")
+        .select("valor").eq("chave", STORE_MODE_KEY).maybeSingle();
+      if (error) throw error;
+      return parseStoreMode(data?.valor);
+    },
+    staleTime: 15000,
+    refetchInterval: 30000,
+    refetchOnWindowFocus: "always",
+  });
+  const mutation = useMutation({
+    mutationKey: ["store-operation-mode"],
+    mutationFn: async (mode: StoreMode) => {
+      const { data, error } = await supabase.from("configuracoes")
+        .upsert({ chave: STORE_MODE_KEY, valor: mode, updated_at: new Date().toISOString() }, { onConflict: "chave" })
+        .select("valor").single();
+      if (error) throw error;
+      return parseStoreMode(data.valor);
+    },
+    onSuccess: (mode) => {
+      queryClient.setQueryData(["store-operation-mode"], mode);
+      void queryClient.invalidateQueries({ queryKey: ["store-operation-mode"] });
+    },
+  });
 
   useEffect(() => {
     const id = window.setInterval(() => setTick((t) => t + 1), 60000);
     return () => window.clearInterval(id);
   }, []);
 
-  const effective = schedule ?? DEFAULT_SCHEDULE;
+  const effective = hoursQuery.data ?? DEFAULT_SCHEDULE;
   const now = new Date();
-  const isOpen = isStoreOpenNow(effective, now);
+  const mode = modeQuery.data ?? "automatico";
   const today = effective[String(now.getDay())];
-  const status = getStoreStatusLabel(effective, now);
+  const status = resolveStoreOperation(mode, getStoreStatusLabel(effective, now));
 
-  return { loading, schedule: effective, isOpen, today, status, _tick: tick };
+  return {
+    loading: hoursQuery.isPending || modeQuery.isPending,
+    error: hoursQuery.error || modeQuery.error,
+    schedule: effective, isOpen: status.isOpen, today, status, mode,
+    setMode: mutation.mutateAsync, saving: mutation.isPending, _tick: tick,
+  };
 };

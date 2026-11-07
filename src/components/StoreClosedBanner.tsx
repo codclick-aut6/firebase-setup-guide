@@ -7,12 +7,14 @@ interface Props {
 }
 
 const StoreClosedBanner = ({ variant = "default", className = "" }: Props) => {
-  const { loading, isOpen, today, schedule } = useStoreOpen();
+  const { loading, isOpen, today, mode } = useStoreOpen();
   if (loading || isOpen) return null;
 
   const now = new Date();
   const dayName = DAY_NAMES[now.getDay()];
-  const msg = today?.closed
+  const msg = mode === "fechada"
+    ? "O recebimento de pedidos está pausado temporariamente."
+    : today?.closed
     ? `Hoje (${dayName}) a loja não abre.`
     : `Estamos fechados agora. Horário de hoje (${dayName}): ${today?.open} às ${today?.close}.`;
 
@@ -23,7 +25,7 @@ const StoreClosedBanner = ({ variant = "default", className = "" }: Props) => {
     >
       <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
       <div className={variant === "compact" ? "text-xs" : "text-sm"}>
-        <strong>Loja fechada.</strong> {msg} Você pode navegar pelo cardápio, mas pedidos só serão aceitos no horário de funcionamento.
+        <strong>Loja fechada.</strong> {msg} {mode === "fechada" ? "Você pode navegar pelo cardápio, mas pedidos só serão aceitos quando a loja reabrir." : "Você pode navegar pelo cardápio, mas pedidos só serão aceitos no horário de funcionamento."}
       </div>
     </div>
   );

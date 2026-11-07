@@ -1,5 +1,7 @@
 # Project Architecture
 
+- Resolve scheduled and manual store operation in `useStoreOpen`, with shared React Query caches and an admin-only `configuracoes` override; this keeps both admin controls, public status and checkout aligned without changing weekly hours.
+
 - Buyer and campaign reports share historical first-order classification by normalized phone; journey totals also include legacy purchase sessions, with unidentified buyer profiles unless an exact order ID exists. Never approximate order links; apply event filters and omit unlinked legacy events for neighborhood filters.
 
 - Marketing metrics uses four top-level views with inline reports; GA4 reads share the `ga4-snapshots` query key and heatmaps accept source-specific values so external sessions and internal orders are never presented as the same measure.

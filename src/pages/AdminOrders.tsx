@@ -1,4 +1,5 @@
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import StoreOperationControl from "@/components/admin/StoreOperationControl";
 import { ClipboardList as PageIcon } from "lucide-react";
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -423,6 +424,7 @@ const AdminOrders = () => {
     <div className="container mx-auto px-4 py-8">
       <AdminPageHeader title="Gerenciamento de Pedidos" icon={PageIcon} iconBg="bg-blue-100" iconColor="text-blue-600" />
 
+      <div className="mb-6"><StoreOperationControl /></div>
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>

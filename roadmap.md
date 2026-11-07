@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Adicionar controle sincronizado Abrir/Fechar/Automático no Painel e Pedidos, integrado ao cardápio e checkout.
+- [ ] Testar as três regras de funcionamento e verificar a apresentação do controle.
+
 - [x] Restaurar a jornada histórica pelos eventos de compra, sem estimar o perfil de compradores sem vínculo exato, e testar a regressão.
 - [x] Cruzar jornada de acesso com clientes novos/recorrentes no detalhamento de vendas, usando vínculos exatos nos novos eventos.
 - [x] Exibir percentual de novos clientes e perfil predominante por campanha.

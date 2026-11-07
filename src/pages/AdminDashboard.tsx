@@ -1,5 +1,6 @@
 
 import React from "react";
+import StoreOperationControl from "@/components/admin/StoreOperationControl";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +35,7 @@ const AdminDashboard = () => {
           </Button>
         </div>
       </div>
+      <StoreOperationControl />
       <div className="mt-8 p-4 bg-gray-50 rounded-lg">
         <h2 className="text-lg font-semibold mb-2">Bem-vindo, Administrador!</h2>
         <p className="text-sm text-muted-foreground">
