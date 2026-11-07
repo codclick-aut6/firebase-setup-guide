@@ -37,6 +37,7 @@
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 60 9.1% 97.8%;
+    --store-open: 142 71% 35%;
 
     --border: 20 5.9% 90%;
     --input: 20 5.9% 90%;
@@ -67,6 +68,10 @@
   #root {
     min-height: 100vh;
   }
+}
+
+.store-open-dot {
+  background-color: hsl(var(--store-open));
 }
 
 /* Mobile-specific fixes */
