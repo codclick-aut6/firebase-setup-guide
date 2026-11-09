@@ -1,4 +1,4 @@
-import React, { createContext } from "react";
+import React from "react";
 import type { AuthResponse, Session } from "@supabase/supabase-js";
 import { useAuthState, type AuthUser } from "@/hooks/useAuthState";
 import {
@@ -8,16 +8,8 @@ import {
 } from "@/services/authService";
 import { useToast } from "@/hooks/use-toast";
 
-interface AuthContextType {
-  currentUser: AuthUser | null;
-  session: Session | null;
-  loading: boolean;
-  signUp: (email: string, password: string, name?: string, phone?: string) => Promise<AuthResponse>;
-  signIn: (email: string, password: string) => Promise<AuthResponse>;
-  logOut: () => Promise<void>;
-}
-
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from "./authContextObject";
+export { AuthContext };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, session, loading } = useAuthState();
