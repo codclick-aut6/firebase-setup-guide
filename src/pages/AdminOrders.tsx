@@ -424,7 +424,7 @@ const AdminOrders = () => {
     <div className="container mx-auto px-4 py-8">
       <AdminPageHeader title="Gerenciamento de Pedidos" icon={PageIcon} iconBg="bg-blue-100" iconColor="text-blue-600" />
 
-      <div className="mb-6"><StoreOperationControl /></div>
+      <div className="mb-6"><StoreOperationControl showDeliveryTime /></div>
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
