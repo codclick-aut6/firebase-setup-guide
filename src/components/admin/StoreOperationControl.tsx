@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useStoreOpen } from "@/hooks/useStoreOpen";
 import { useToast } from "@/hooks/use-toast";
+import DeliveryTimeField from "./DeliveryTimeField";
 import type { StoreMode } from "@/utils/storeOperation";
 
-export default function StoreOperationControl() {
+export default function StoreOperationControl({ showDeliveryTime = false }: { showDeliveryTime?: boolean }) {
   const { isOpen, status, mode, loading, error, saving, setMode } = useStoreOpen();
   const { toast } = useToast();
   const [pendingMode, setPendingMode] = useState<StoreMode | null>(null);
@@ -33,6 +34,7 @@ export default function StoreOperationControl() {
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
+        {showDeliveryTime && <DeliveryTimeField />}
         <Button variant={isOpen ? "destructive" : "default"} disabled={loading || saving || !!error} onClick={() => setPendingMode(isOpen ? "fechada" : "aberta")} className="gap-2">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : isOpen ? <DoorClosed className="h-4 w-4" /> : <DoorOpen className="h-4 w-4" />}
           {isOpen ? "Fechar Loja" : "Abrir Loja"}
