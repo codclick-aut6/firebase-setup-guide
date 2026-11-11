@@ -1,5 +1,5 @@
 
 ----------------------------------------------------
-**V.1.190.1** - codclick-aut6/firebase-setup-guide - 09/11/2026**
+**V.1.191.1** - codclick-aut6/firebase-setup-guide - 11/11/2026**
 ----------------------------------------------------
-- Adicionado campo "Tempo de Entrega" na admin-orders para ser usado pelo GoodZap
+- Adicionado filtros completos para DISPOSITIVOS em admin-metrics 
