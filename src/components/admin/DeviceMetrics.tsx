@@ -9,7 +9,7 @@ interface Row { kind: string; value: string; sessions: number; orders: number; r
 const LABELS: Record<string, string> = { mobile: "Celular", tablet: "Tablet", desktop: "Computador", desconhecido: "Sem dado" };
 const TITLES: Record<string, string> = { device: "Tipo de aparelho", os: "Sistema", browser: "Navegador" };
 
-const DeviceMetrics: React.FC<{ from: Date; to: Date }> = ({ from, to }) => {
+const DeviceMetrics: React.FC<{ from: Date; to: Date; source?: string | null; campaign?: string | null; locField?: string | null; locValue?: string | null }> = ({ from, to, source = null, campaign = null, locField = null, locValue = null }) => {
   const [rows, setRows] = useState<Row[] | null>(null);
 
   useEffect(() => {
@@ -18,13 +18,14 @@ const DeviceMetrics: React.FC<{ from: Date; to: Date }> = ({ from, to }) => {
     (supabase.rpc as any)("mkt_device_breakdown", {
       p_start: startOfDay(from).toISOString(),
       p_end: endOfDay(to).toISOString(),
+      p_source: source, p_campaign: campaign, p_loc_field: locValue ? locField : null, p_loc_value: locValue || null,
     }).then(({ data, error }: any) => {
       if (cancelled) return;
       if (error) console.error("device breakdown", error);
       setRows(((data as Row[]) || []).map((r) => ({ ...r, sessions: Number(r.sessions), orders: Number(r.orders), revenue: Number(r.revenue) })));
     });
     return () => { cancelled = true; };
-  }, [from, to]);
+  }, [from, to, source, campaign, locField, locValue]);
 
   if (!rows) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
