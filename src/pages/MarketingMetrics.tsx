@@ -2309,7 +2309,7 @@ const MarketingMetrics: React.FC = () => {
           </>
         )}
         {activeTab === "acquisition" && dateRange?.from && dateRange?.to && <MarketingAttributionReports start={format(dateRange.from, "yyyy-MM-dd")} end={format(dateRange.to, "yyyy-MM-dd")} />}
-        {activeTab === "acquisition" && dateRange?.from && dateRange?.to && <section className="mt-8 border-t border-border pt-6"><h2 className="mb-2 text-lg font-semibold">Aparelhos, sistemas e navegadores · Cardápio</h2><p className="mb-4 text-xs text-muted-foreground">Período completo · independente dos filtros de origem, campanha e localização.</p><DeviceMetrics from={dateRange.from} to={dateRange.to} /></section>}
+        {activeTab === "acquisition" && dateRange?.from && dateRange?.to && <section className="mt-8 border-t border-border pt-6"><h2 className="mb-2 text-lg font-semibold">Aparelhos, sistemas e navegadores · Cardápio</h2><p className="mb-4 text-xs text-muted-foreground">Respeita os filtros de período, origem, campanha e localização.</p><DeviceMetrics from={dateRange.from} to={dateRange.to} source={selectedSource !== "todas" ? selectedSource : null} campaign={selectedCampaign !== "campanhas" ? selectedCampaign : null} locField={locationMode !== "todas" ? locationMode : null} locValue={locationMode !== "todas" ? locationValue : null} /></section>}
         {(activeTab === "acquisition" || activeTab === "hours") && dateRange?.from && dateRange?.to && <MarketingGA4Reports start={format(dateRange.from, "yyyy-MM-dd")} end={format(dateRange.to, "yyyy-MM-dd")} mode={activeTab === "hours" ? "hours" : "acquisition"} />}
       </div>
     </div>
