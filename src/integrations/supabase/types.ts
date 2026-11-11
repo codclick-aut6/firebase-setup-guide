@@ -1609,7 +1609,14 @@ export type Database = {
         }[]
       }
       mkt_device_breakdown: {
-        Args: { p_end: string; p_start: string }
+        Args: {
+          p_campaign?: string
+          p_end: string
+          p_loc_field?: string
+          p_loc_value?: string
+          p_source?: string
+          p_start: string
+        }
         Returns: Json
       }
       mkt_funnel_overview: {
