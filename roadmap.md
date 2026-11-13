@@ -1,7 +1,8 @@
 # Roadmap
 
-- [ ] Implementar Clientes & LTV com histórico por telefone, filtros de aquisição, indicadores e CSV (Abordagem B).
-- [ ] Testar cálculos e conferir apresentação; Abordagem A fica para uma etapa futura.
+- [x] Implementar Clientes & LTV com histórico por telefone, filtros de aquisição, indicadores e CSV (Abordagem B).
+- [x] Testar cálculos (22 testes aprovados) e conferir apresentação, busca e CSV com dados controlados em computador/celular; Abordagem A fica para uma etapa futura.
+- [ ] Conferir Clientes & LTV com dados reais na conta administrativa — bloqueado: autenticação externa indisponível; a rota real redirecionou para login.
 
 - [x] Separar custos de mídia, brindes e total em Campanhas, com toggle ligado por padrão e CMV dinâmico no período principal.
 - [x] Validar cálculo (11 testes), troca de períodos, toggle e salvamento exclusivo de mídia com dados controlados; apresentação conferida em computador/celular.
