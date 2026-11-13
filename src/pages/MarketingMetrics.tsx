@@ -1,4 +1,5 @@
 import { MarketingReportTable } from "@/components/admin/MarketingReportTable";
+import { CustomerLtvReport } from "@/components/admin/CustomerLtvReport";
 import { LocationSalesReport } from "@/components/admin/LocationSalesReport";
 import { MarketingAttributionReports } from "@/components/admin/MarketingAttributionReports";
 import { MarketingGA4Reports } from "@/components/admin/MarketingGA4Reports";
@@ -408,7 +409,7 @@ const MarketingMetrics: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState("overview");
   const [performanceView, setPerformanceView] = useState("produtos");
-  const metricType = activeTab === "overview" ? "geral" : activeTab === "performance" ? performanceView : activeTab === "acquisition" ? "visitas" : "horarios";
+  const metricType = activeTab === "overview" ? "geral" : activeTab === "performance" ? performanceView : activeTab === "acquisition" ? "visitas" : activeTab === "clients" ? "clientes" : "horarios";
   const [visits, setVisits] = useState<VisitMetrics | null>(null);
   const [prevVisits, setPrevVisits] = useState<VisitMetrics | null>(null);
   const [utmSources, setUtmSources] = useState<string[]>([]);
@@ -1235,7 +1236,7 @@ const MarketingMetrics: React.FC = () => {
           <div>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
-                <span className="text-2xl font-bold">Período</span>
+                <span className="text-2xl font-bold">{activeTab === "clients" ? "Período de aquisição" : "Período"}</span>
                 {dateRange?.from && (
                   <span className="text-sm font-medium text-muted-foreground">
                     {dateRange.to
@@ -1285,15 +1286,16 @@ const MarketingMetrics: React.FC = () => {
         </section>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 lg:grid-cols-4">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 lg:grid-cols-5">
             <TabsTrigger value="overview" className="whitespace-normal py-3">Visão Geral & Vendas</TabsTrigger>
             <TabsTrigger value="performance" className="whitespace-normal py-3">Produtos & Funil</TabsTrigger>
             <TabsTrigger value="acquisition" className="whitespace-normal py-3">Aquisição & Público</TabsTrigger>
             <TabsTrigger value="hours" className="whitespace-normal py-3">Horários & Comportamento</TabsTrigger>
+            <TabsTrigger value="clients" className="whitespace-normal py-3">Clientes & LTV</TabsTrigger>
           </TabsList>
         </Tabs>
         {activeTab === "performance" && <Tabs value={performanceView} onValueChange={setPerformanceView} className="mb-6"><TabsList><TabsTrigger value="produtos">Produtos</TabsTrigger><TabsTrigger value="funil">Funil de conversão</TabsTrigger></TabsList></Tabs>}
-        {activeTab !== "hours" && <>
+        {activeTab !== "hours" && activeTab !== "clients" && <>
         {/* Filters */}
         <div className="flex flex-col gap-4 mb-6 sm:grid sm:grid-cols-2 lg:flex lg:flex-row lg:flex-nowrap lg:gap-3">
           <Select value={selectedSource} onValueChange={setSelectedSource}>
@@ -2308,6 +2310,7 @@ const MarketingMetrics: React.FC = () => {
         )}
           </>
         )}
+        {activeTab === "clients" && <CustomerLtvReport from={dateRange?.from} to={dateRange?.to ?? dateRange?.from} />}
         {activeTab === "acquisition" && dateRange?.from && dateRange?.to && <MarketingAttributionReports start={format(dateRange.from, "yyyy-MM-dd")} end={format(dateRange.to, "yyyy-MM-dd")} />}
         {activeTab === "acquisition" && dateRange?.from && dateRange?.to && <section className="mt-8 border-t border-border pt-6"><h2 className="mb-2 text-lg font-semibold">Aparelhos, sistemas e navegadores · Cardápio</h2><p className="mb-4 text-xs text-muted-foreground">Respeita os filtros de período, origem, campanha e localização.</p><DeviceMetrics from={dateRange.from} to={dateRange.to} source={selectedSource !== "todas" ? selectedSource : null} campaign={selectedCampaign !== "campanhas" ? selectedCampaign : null} locField={locationMode !== "todas" ? locationMode : null} locValue={locationMode !== "todas" ? locationValue : null} /></section>}
         {(activeTab === "acquisition" || activeTab === "hours") && dateRange?.from && dateRange?.to && <MarketingGA4Reports start={format(dateRange.from, "yyyy-MM-dd")} end={format(dateRange.to, "yyyy-MM-dd")} mode={activeTab === "hours" ? "hours" : "acquisition"} />}

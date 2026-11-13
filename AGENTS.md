@@ -6,7 +6,8 @@
 
 - Buyer and campaign reports share historical first-order classification by normalized phone; journey totals also include legacy purchase sessions, with unidentified buyer profiles unless an exact order ID exists. Never approximate order links; apply event filters and omit unlinked legacy events for neighborhood filters.
 
-- Marketing metrics uses four top-level views with inline reports; GA4 reads share the `ga4-snapshots` query key and heatmaps accept source-specific values so external sessions and internal orders are never presented as the same measure.
+- Marketing metrics uses top-level views with inline reports; GA4 reads share the `ga4-snapshots` query key and heatmaps accept source-specific values so external sessions and internal orders are never presented as the same measure.
+- Customer LTV uses cached, fully paginated order history and normalized phones; acquisition filters select first-order cohorts without filtering later lifetime revenue, with unknown attribution left explicit instead of invented.
 - Marketing's internal visits heatmap pages through all visit events and deduplicates sessions per weekday/hour bucket to avoid silently truncated counts.
 - Location sales reports share one cached, completely paginated order query per header filter set; city/neighborhood rankings and product/order details derive from those same orders so drilldowns cannot bypass filters.
 
