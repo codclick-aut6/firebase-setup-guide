@@ -9,10 +9,12 @@ import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import { trackCheckoutLoginCompleted } from "@/utils/trackingEvents";
+import EmailDomainShortcuts from "@/components/auth/EmailDomainShortcuts";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const { cartItems } = useCart();
@@ -25,6 +27,7 @@ const Login = () => {
     e.preventDefault();
     try {
       setError("");
+      setNotFound(false);
       setLoading(true);
       const result = await signIn(email, password);
       const user = result.data.user;
@@ -58,7 +61,20 @@ const Login = () => {
       }
     } catch (error) {
       console.error(error);
-      setError("Falha ao fazer login. Verifique seu email e senha.");
+      let exists = true;
+      try {
+        const { data } = await supabase
+          .from("users")
+          .select("id")
+          .ilike("email", email.trim())
+          .limit(1);
+        exists = !!(data && data.length > 0);
+      } catch {}
+      if (!exists) {
+        setNotFound(true);
+      } else {
+        setError("Senha incorreta. Confira e tente novamente, ou toque em \"Esqueceu sua senha?\".");
+      }
     } finally {
       setLoading(false);
     }
@@ -69,18 +85,32 @@ const [showPassword, setShowPassword] = useState(false); // 👈 estado para exi
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-lg shadow-md">
-        <div className="text-center space-y-3">
-          <h2 className="text-3xl font-extrabold text-gray-900">Entrar</h2>
-          <div className="inline-flex items-center gap-2 rounded-full bg-green-50 px-4 py-2 border border-green-200">
-            <span className="text-sm text-gray-700">É novo por aqui?</span>
-            <Link
-              to={redirectTo ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}
-              className="text-sm font-bold text-green-600 hover:text-green-700"
-            >
-              Criar
-            </Link>
-          </div>
+        <div className="rounded-xl border-2 border-primary bg-primary/10 p-5 text-center space-y-3">
+          <h2 className="text-2xl font-extrabold text-foreground">Primeira vez pedindo por aqui?</h2>
+          <p className="text-base text-muted-foreground">Leva menos de 1 minuto para fazer seu cadastro e pedir</p>
+          <Button asChild size="lg" className="w-full h-14 text-lg font-bold bg-green-600 hover:bg-green-700 text-white">
+            <Link to={redirectTo ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}>Criar meu cadastro agora</Link>
+          </Button>
         </div>
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          <span>ou entre se já tiver cadastro</span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
+
+        {notFound && (
+          <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-4 space-y-3 text-center">
+            <p className="text-base font-semibold text-gray-900">Não encontramos cadastro com este e-mail. É sua primeira vez aqui?</p>
+            <Button
+              type="button"
+              size="lg"
+              className="w-full h-12 text-base font-bold bg-green-600 hover:bg-green-700 text-white"
+              onClick={() => navigate(redirectTo ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register", { state: { email, password } })}
+            >
+              Criar conta com este e-mail
+            </Button>
+          </div>
+        )}
 
         {error && (
           <Alert variant="destructive">
@@ -88,7 +118,7 @@ const [showPassword, setShowPassword] = useState(false); // 👈 estado para exi
           </Alert>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
               <label
@@ -111,6 +141,7 @@ const [showPassword, setShowPassword] = useState(false); // 👈 estado para exi
                   placeholder="seu@email.com"
                 />
               </div>
+              <EmailDomainShortcuts value={email} onChange={setEmail} />
             </div>
 
 <div>
@@ -128,17 +159,18 @@ const [showPassword, setShowPassword] = useState(false); // 👈 estado para exi
       type={showPassword ? "text" : "password"} // 👈 alterna tipo
       autoComplete="current-password"
       required
-      className="pl-10 pr-10" // 👈 espaço extra à direita para o botão
+      className="pl-10 pr-12" // 👈 espaço extra à direita para o botão
       value={password}
       onChange={(e) => setPassword(e.target.value)}
       placeholder="••••••••"
     />
     <button
       type="button"
-      className="absolute top-2.5 right-3 text-gray-400 hover:text-gray-600"
+      className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-md text-foreground hover:bg-muted"
+      aria-label="Mostrar ou ocultar senha"
       onClick={() => setShowPassword(!showPassword)}
     >
-      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+      {showPassword ? <EyeOff className="h-6 w-6" /> : <Eye className="h-6 w-6" />}
     </button>
   </div>
             </div>

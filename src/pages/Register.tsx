@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import EmailDomainShortcuts from "@/components/auth/EmailDomainShortcuts";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -72,14 +73,16 @@ const Register = () => {
     trackCheckoutRegisterCompleted(cartItems, cartItems.reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0));
   };
   
+  const location = useLocation();
+  const prefill = (location.state || {}) as { email?: string; password?: string };
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      email: "",
+      email: prefill.email || "",
       phone: "",
-      password: "",
-      passwordConfirm: ""
+      password: prefill.password || "",
+      passwordConfirm: prefill.password || ""
     }
   });
 
@@ -307,6 +310,7 @@ const Register = () => {
                       />
                     </div>
                   </FormControl>
+                  <EmailDomainShortcuts value={field.value} onChange={(v) => field.onChange(v)} />
                   <FormMessage />
                 </FormItem>
               )}
@@ -347,19 +351,20 @@ const Register = () => {
                       <Lock className="absolute top-3 left-3 text-gray-400 h-5 w-5" />
                       <Input 
                         placeholder="••••••••" 
-                        className="pl-10 pr-10" 
+                        className="pl-10 pr-12" 
                         type={showPassword ? "text" : "password"}
                         {...field} 
                       />
                       <button
                         type="button"
-                        className="absolute top-2.5 right-3 text-gray-400 hover:text-gray-600"
+                        className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-md text-foreground hover:bg-muted"
+      aria-label="Mostrar ou ocultar senha"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
+                          <EyeOff className="h-6 w-6" />
                         ) : (
-                          <Eye className="h-5 w-5" />
+                          <Eye className="h-6 w-6" />
                         )}
                       </button>
                     </div>
@@ -380,19 +385,20 @@ const Register = () => {
                       <Lock className="absolute top-3 left-3 text-gray-400 h-5 w-5" />
                       <Input 
                         placeholder="••••••••" 
-                        className="pl-10 pr-10" 
+                        className="pl-10 pr-12" 
                         type={showPasswordConfirm ? "text" : "password"}
                         {...field} 
                       />
                       <button
                         type="button"
-                        className="absolute top-2.5 right-3 text-gray-400 hover:text-gray-600"
+                        className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-md text-foreground hover:bg-muted"
+      aria-label="Mostrar ou ocultar senha"
                         onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
                       >
                         {showPasswordConfirm ? (
-                          <EyeOff className="h-5 w-5" />
+                          <EyeOff className="h-6 w-6" />
                         ) : (
-                          <Eye className="h-5 w-5" />
+                          <Eye className="h-6 w-6" />
                         )}
                       </button>
                     </div>
