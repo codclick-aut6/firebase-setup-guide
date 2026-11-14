@@ -8,13 +8,13 @@ export const completeEmail = (current: string, domain: string) => {
 };
 
 const EmailDomainShortcuts: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
-  <div className="mt-2 flex flex-wrap gap-2" aria-label="Completar e-mail">
+  <div className="mt-1.5 flex flex-wrap gap-1.5" aria-label="Completar e-mail">
     {DOMAINS.map((d) => (
       <button
         key={d}
         type="button"
         onClick={() => onChange(completeEmail(value, d))}
-        className="min-h-[40px] rounded-full border-2 border-primary/40 bg-primary/5 px-3 py-1.5 text-sm font-semibold text-foreground active:scale-95 hover:bg-primary/10"
+        className="min-h-[28px] rounded-full border border-primary/40 bg-primary/5 px-2 py-0.5 text-xs font-medium text-foreground active:scale-95 hover:bg-primary/10"
       >
         {d}
       </button>
