@@ -85,10 +85,10 @@ const [showPassword, setShowPassword] = useState(false); // 👈 estado para exi
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-5 bg-white p-6 rounded-lg shadow-md">
-        <div className="rounded-xl border-2 border-primary bg-primary/10 p-4 text-center space-y-2">
-          <h2 className="text-xl font-extrabold text-foreground">Primeira vez pedindo por aqui?</h2>
-          <p className="text-sm text-muted-foreground">Leva menos de 1 minuto para fazer seu cadastro e pedir</p>
-          <Button asChild size="lg" className="w-full h-12 text-base font-bold bg-green-600 hover:bg-green-700 text-white">
+        <div className="rounded-xl border-2 border-primary bg-primary/10 p-3 text-center space-y-1.5">
+          <h2 className="text-lg font-extrabold text-foreground">Primeira vez pedindo por aqui?</h2>
+          <p className="text-xs text-muted-foreground">Leva menos de 1 minuto para fazer seu cadastro e pedir</p>
+          <Button asChild size="lg" className="w-full h-11 text-base font-bold bg-green-600 hover:bg-green-700 text-white">
             <Link to={redirectTo ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}>Criar meu cadastro agora</Link>
           </Button>
         </div>
