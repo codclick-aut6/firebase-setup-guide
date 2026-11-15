@@ -1,5 +1,5 @@
 
 ----------------------------------------------------
-**V.1.191.2** - codclick-aut6/firebase-setup-guide - 11/11/2026**
+**V.1.192.0** - codclick-aut6/firebase-setup-guide - 13/11/2026**
 ----------------------------------------------------
-- Ajustes entre visitas e sessoes em DISPOSITIVOS
+- Alteração da página de Login/Signup com layout mais amigável para a criação de conta
