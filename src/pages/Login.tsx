@@ -9,7 +9,6 @@ import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import { trackCheckoutLoginCompleted } from "@/utils/trackingEvents";
-import EmailDomainShortcuts from "@/components/auth/EmailDomainShortcuts";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -141,7 +140,6 @@ const [showPassword, setShowPassword] = useState(false); // 👈 estado para exi
                   placeholder="seu@email.com"
                 />
               </div>
-              <EmailDomainShortcuts value={email} onChange={setEmail} />
             </div>
 
 <div>

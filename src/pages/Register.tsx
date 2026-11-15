@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import EmailDomainShortcuts from "@/components/auth/EmailDomainShortcuts";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -310,7 +309,6 @@ const Register = () => {
                       />
                     </div>
                   </FormControl>
-                  <EmailDomainShortcuts value={field.value} onChange={(v) => field.onChange(v)} />
                   <FormMessage />
                 </FormItem>
               )}
