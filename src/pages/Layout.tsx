@@ -152,6 +152,7 @@ const Layout = () => {
   const [corBotoes, setCorBotoes] = useState('#ffffff');
   const [corFonteBotoes, setCorFonteBotoes] = useState('#1f2937');
   const [corBotaoAdicionar, setCorBotaoAdicionar] = useState('#4CAF50');
+  const [corFonteBotaoAdicionar, setCorFonteBotaoAdicionar] = useState('#ffffff');
   const [corBackgroundHeader, setCorBackgroundHeader] = useState('#ffffff');
   const [corBackgroundCards, setCorBackgroundCards] = useState('#ffffff');
 
@@ -251,6 +252,7 @@ const Layout = () => {
       setCorBotoes(settings.cor_botoes);
       setCorFonteBotoes(settings.cor_fonte_botoes);
       setCorBotaoAdicionar(settings.cor_botao_adicionar);
+      setCorFonteBotaoAdicionar(settings.cor_fonte_botao_adicionar);
       setCorBackgroundHeader(settings.cor_background_header);
       setCorBackgroundCards(settings.cor_background_cards);
 
@@ -370,6 +372,7 @@ const Layout = () => {
       cor_botoes: DARK_COLORS.corBotoes,
       cor_fonte_botoes: DARK_COLORS.corFonteBotoes,
       cor_botao_adicionar: '#4CAF50',
+      cor_fonte_botao_adicionar: '#ffffff',
       cor_background_header: DARK_COLORS.corBackgroundHeader,
       cor_background_cards: DARK_COLORS.corBackgroundCards,
 
@@ -442,6 +445,7 @@ const Layout = () => {
         cor_botoes: corBotoes,
         cor_fonte_botoes: corFonteBotoes,
         cor_botao_adicionar: corBotaoAdicionar,
+        cor_fonte_botao_adicionar: corFonteBotaoAdicionar,
         cor_background_header: corBackgroundHeader,
         cor_background_cards: corBackgroundCards,
 
@@ -499,6 +503,7 @@ const Layout = () => {
       setCorBotoes(DEFAULT_COLORS.corBotoes);
       setCorFonteBotoes(DEFAULT_COLORS.corFonteBotoes);
       setCorBotaoAdicionar('#4CAF50');
+      setCorFonteBotaoAdicionar('#ffffff');
       setCorBackgroundHeader(DEFAULT_COLORS.corBackgroundHeader);
       setCorBackgroundCards(DEFAULT_COLORS.corBackgroundCards);
 
@@ -516,6 +521,7 @@ const Layout = () => {
         cor_botoes: DEFAULT_COLORS.corBotoes,
         cor_fonte_botoes: DEFAULT_COLORS.corFonteBotoes,
         cor_botao_adicionar: '#4CAF50',
+        cor_fonte_botao_adicionar: '#ffffff',
         cor_background_header: DEFAULT_COLORS.corBackgroundHeader,
         cor_background_cards: DEFAULT_COLORS.corBackgroundCards,
 
@@ -571,6 +577,7 @@ const Layout = () => {
         { key: 'cor_botoes', label: 'Cor dos Botões', value: corBotoes, set: setCorBotoes },
         { key: 'cor_fonte_botoes', label: 'Cor da Fonte dos Botões', value: corFonteBotoes, set: setCorFonteBotoes },
         { key: 'cor_botao_adicionar', label: 'Cor do Botão "Adicionar"', value: corBotaoAdicionar, set: setCorBotaoAdicionar },
+        { key: 'cor_fonte_botao_adicionar', label: 'Cor da Fonte do Botão "Adicionar"', value: corFonteBotaoAdicionar, set: setCorFonteBotaoAdicionar },
       ],
     },
     {
@@ -1021,7 +1028,7 @@ const Layout = () => {
                   <div className="mt-2 p-2 rounded" style={{ backgroundColor: pv('cor_background_cards', corBackgroundCards) }}>
                     <div className="flex items-center justify-between">
                       <span className="text-base font-bold" style={{ color: pv('cor_fonte_titulo_produto', corFonteTituloProduto) }}>Nome do Produto</span>
-                      <span className="text-xs font-medium px-3 py-1.5 rounded-full text-white inline-flex items-center gap-1" style={{ backgroundColor: pv('cor_botao_adicionar', corBotaoAdicionar) }}>＋ Adicionar</span>
+                      <span className="text-xs font-medium px-3 py-1.5 rounded-full inline-flex items-center gap-1" style={{ backgroundColor: pv('cor_botao_adicionar', corBotaoAdicionar), color: pv('cor_fonte_botao_adicionar', corFonteBotaoAdicionar) }}>＋ Adicionar</span>
                     </div>
                   </div>
 

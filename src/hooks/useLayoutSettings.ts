@@ -48,6 +48,7 @@ export interface LayoutSettings {
   cor_botoes: string;
   cor_fonte_botoes: string;
   cor_botao_adicionar: string;
+  cor_fonte_botao_adicionar: string;
   cor_background_header: string;
   cor_background_cards: string;
 
@@ -119,6 +120,7 @@ const defaults: LayoutSettings = {
   cor_botoes: '#ffffff',
   cor_fonte_botoes: '#1f2937',
   cor_botao_adicionar: '#4CAF50',
+  cor_fonte_botao_adicionar: '#ffffff',
   cor_background_header: '#ffffff',
   cor_background_cards: '#ffffff',
 

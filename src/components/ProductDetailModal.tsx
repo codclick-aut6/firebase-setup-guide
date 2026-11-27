@@ -64,7 +64,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 {formatCurrency(item.price)}
               </span>
             </div>
-<Button onClick={onAddToCart} size="sm" className="hover:bg-opacity-90 text-white" style={{ backgroundColor: settings.cor_botao_adicionar || '#4CAF50' }} disabled={isUnavailable(item)}>
+<Button onClick={onAddToCart} size="sm" className="hover:bg-opacity-90" style={{ backgroundColor: settings.cor_botao_adicionar || '#4CAF50', color: settings.cor_fonte_botao_adicionar || '#ffffff' }} disabled={isUnavailable(item)}>
   <PlusCircle className="mr-1 h-4 w-4" />
   {isOutOfStock(item) ? 'Esgotado' : (item.available === false ? 'Indisponível' : 'Adicionar')}
 </Button>

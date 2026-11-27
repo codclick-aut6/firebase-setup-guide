@@ -332,7 +332,7 @@ const MenuItemCard = React.forwardRef<{ triggerClick: (targetSubItemId?: string)
               {isOutOfStock(item) ? 'Esgotado' : formatCurrency(listPrice.price)}
             </span>
           </div>
-          <Button size="icon" className="h-8 w-8 rounded-full" aria-label={`Adicionar ${item.name}`} onClick={handleButtonClick} disabled={listDisabled} style={{ backgroundColor: settings.cor_botao_adicionar || undefined }}>
+          <Button size="icon" className="h-8 w-8 rounded-full" aria-label={`Adicionar ${item.name}`} onClick={handleButtonClick} disabled={listDisabled} style={{ backgroundColor: settings.cor_botao_adicionar || undefined, color: settings.cor_fonte_botao_adicionar || '#ffffff' }}>
             <PlusCircle className="h-4 w-4" />
           </Button>
         </div>
@@ -387,7 +387,7 @@ const MenuItemCard = React.forwardRef<{ triggerClick: (targetSubItemId?: string)
           <Button
             onClick={handleButtonClick}
             className={`add-to-cart-btn ${isTwoColumns ? '!text-xs !px-2 !py-1 !min-h-0 !h-7 w-full' : ''}`}
-            style={{ backgroundColor: settings.cor_botao_adicionar || '#4CAF50' }}
+            style={{ backgroundColor: settings.cor_botao_adicionar || '#4CAF50', color: settings.cor_fonte_botao_adicionar || '#ffffff' }}
             size="sm"
             disabled={loading || isUnavailable(item) || (!hasSubmenu && item.hasVariations && Object.keys(groups).length === 0)}
           >
